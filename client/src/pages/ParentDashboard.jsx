@@ -7,7 +7,8 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
-
+import { format } from 'date-fns'
+import { ar } from 'date-fns/locale'
 // ============================================
 // ثوابت
 // ============================================
@@ -90,7 +91,7 @@ export default function ParentDashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
-
+  const [calendarEvents, setCalendarEvents] = useState([])
   useEffect(() => {
     const token = localStorage.getItem('parent_token')
     if (!token) {
@@ -106,9 +107,10 @@ export default function ParentDashboard() {
     }
   }, [])
 
-  useEffect(() => {
+    useEffect(() => {
     if (selectedStudentId) {
       fetchStudentData()
+      fetchCalendar()
     }
   }, [selectedStudentId])
 
@@ -137,7 +139,14 @@ export default function ParentDashboard() {
     localStorage.removeItem('parent_students')
     navigate('/parent-login')
   }
-
+  const fetchCalendar = async () => {
+    try {
+      const res = await api.get('/calendar/public')
+      setCalendarEvents(res.data.data || [])
+    } catch (e) {
+      console.error('فشل تحميل التقويم:', e)
+    }
+  }
   const fmt = (n) => (n || 0).toLocaleString('ar-IQ')
 
   // ============================================
@@ -248,12 +257,13 @@ export default function ParentDashboard() {
 
       {/* Tabs */}
       <div className="glass-card p-2 flex flex-wrap gap-1">
-        {[
+                {[
           { id: 'overview',       label: 'نظرة عامة',     icon: TrendingUp },
           { id: 'fees',           label: 'الأقساط',        icon: Wallet },
           { id: 'grades',         label: 'الدرجات',        icon: GraduationCap },
           { id: 'attendance',     label: 'الحضور',         icon: CheckSquare },
           { id: 'behavior',       label: 'السلوك',         icon: Award },
+          { id: 'calendar',       label: 'التقويم',        icon: CalendarIcon },
           { id: 'notes',          label: 'الملاحظات',      icon: MessageSquare },
           { id: 'communications', label: 'سجل التواصل',   icon: Phone },
         ].map((tab) => {
@@ -713,6 +723,91 @@ export default function ParentDashboard() {
                 </div>
               )
             })
+          )}
+        </div>
+      )}
+      {/* ========== التقويم الأكاديمي ========== */}
+      {activeTab === 'calendar' && (
+        <div className="space-y-4">
+          {calendarEvents.length === 0 ? (
+            <div className="glass-card p-10 text-center">
+              <CalendarIcon size={48} className="mx-auto mb-3 text-slate-400" />
+              <p style={{ color: 'var(--text-secondary)' }}>
+                لا توجد أحداث قادمة حالياً
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="glass-card p-4">
+                <div className="text-xs p-3 rounded-lg"
+                     style={{ background: 'rgba(99,102,241,0.08)', color: '#4F46E5' }}>
+                  📅 هذه الأحداث والتقويم الأكاديمي المعلن من إدارة المدرسة
+                </div>
+              </div>
+
+              {calendarEvents.map((ev) => {
+                const daysLeft = Math.ceil(
+                  (new Date(ev.start_date) - new Date()) / (1000 * 60 * 60 * 24)
+                )
+                const typeInfo = {
+                  exam:     { label: 'امتحان',    icon: '📝', color: '#EF4444' },
+                  holiday:  { label: 'عطلة',      icon: '🎉', color: '#10B981' },
+                  meeting:  { label: 'اجتماع',    icon: '👥', color: '#F59E0B' },
+                  activity: { label: 'نشاط',      icon: '🎨', color: '#8B5CF6' },
+                  deadline: { label: 'موعد نهائي',icon: '⏰', color: '#DC2626' },
+                  event:    { label: 'حدث',       icon: '📌', color: '#6366F1' },
+                }[ev.type] || { label: 'حدث', icon: '📌', color: '#6366F1' }
+
+                const color = ev.color || typeInfo.color
+
+                return (
+                  <div key={ev.id}
+                       className="glass-card p-5"
+                       style={{ borderRight: `4px solid ${color}` }}>
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                           style={{ background: `${color}20` }}>
+                        {typeInfo.icon}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <span className="badge"
+                                style={{ background: `${color}20`, color }}>
+                            {typeInfo.label}
+                          </span>
+                          <span className="badge"
+                                style={{
+                                  background: daysLeft <= 3 ? 'rgba(239,68,68,0.15)' : 'rgba(99,102,241,0.15)',
+                                  color: daysLeft <= 3 ? '#DC2626' : '#4338CA',
+                                }}>
+                            {daysLeft === 0 ? '🔔 اليوم' :
+                             daysLeft === 1 ? '⏰ غدًا' :
+                             daysLeft < 0 ? '✅ انتهى' :
+                             `بعد ${daysLeft} يوم`}
+                          </span>
+                        </div>
+
+                        <h4 className="font-bold text-lg mb-1">{ev.title}</h4>
+
+                        {ev.description && (
+                          <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
+                            {ev.description}
+                          </p>
+                        )}
+
+                        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          📅 {format(new Date(ev.start_date), 'EEEE d MMMM yyyy', { locale: ar })}
+                          {ev.end_date && ev.end_date !== ev.start_date && (
+                            <> — {format(new Date(ev.end_date), 'd MMMM', { locale: ar })}</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </>
           )}
         </div>
       )}

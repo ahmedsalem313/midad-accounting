@@ -44,6 +44,7 @@ const MENU_GROUPS = [
     items: [
       { path: '/grades',          label: 'الدرجات',              icon: GraduationCap, perm: 'grades.view' },
       { path: '/timetable',       label: 'جدول الحصص',           icon: Calendar,      perm: 'timetable.view' },
+      { path: '/calendar',        label: 'التقويم الأكاديمي',    icon: Calendar,      perm: 'calendar.view' },
       { path: '/assignments',     label: 'الواجبات',             icon: BookOpen,      perm: 'assignments.view' },
       { path: '/late-assignments',label: 'المتأخرون بالواجبات',  icon: AlertTriangle, perm: 'assignments.view' },
     ],

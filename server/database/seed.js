@@ -42,7 +42,10 @@ const permissions = [
   ['timetable.view',   'عرض جدول الحصص',   'View Timetable',   'timetable'],
   ['timetable.create', 'إنشاء جدول',       'Create Timetable', 'timetable'],
   ['timetable.edit',   'تعديل الجدول',     'Edit Timetable',   'timetable'],
-
+  ['calendar.view',    'عرض التقويم',      'View Calendar',    'calendar'],
+  ['calendar.create',  'إضافة حدث',        'Create Event',     'calendar'],
+  ['calendar.edit',    'تعديل حدث',        'Edit Event',       'calendar'],
+  ['calendar.delete',  'حذف حدث',          'Delete Event',     'calendar'],
   // الحضور
   ['attendance.view',  'عرض الحضور',       'View Attendance',  'attendance'],
   ['attendance.mark',  'تسجيل الحضور',     'Mark Attendance',  'attendance'],
@@ -173,6 +176,10 @@ grantPermissions('teacher', [
   'payroll.own',
   'advances.request',
   'whatsapp.grades',
+    'calendar.view',
+  'calendar.create',
+  'calendar.edit',
+  'calendar.delete',
 ])
 
 // ============================================

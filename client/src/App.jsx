@@ -9,6 +9,7 @@ import Payments from './pages/Payments'
 import Expenses from './pages/Expenses'
 import Grades from './pages/Grades'
 import Timetable from './pages/Timetable'
+import Calendar from './pages/Calendar'
 import Attendance from './pages/Attendance'
 import StudentAttendance from './pages/StudentAttendance'
 import AbsenceWarnings from './pages/AbsenceWarnings'
@@ -135,6 +136,7 @@ export default function App() {
 <Route path="qr-codes" element={<ProtectedRoute permission="settings.view"><QRCodes /></ProtectedRoute>} />
         {/* الجدول والحضور */}
         <Route path="timetable" element={<ProtectedRoute permission="timetable.view"><Timetable /></ProtectedRoute>} />
+        <Route path="calendar" element={<ProtectedRoute permission="calendar.view"><Calendar /></ProtectedRoute>} />
         <Route path="attendance" element={<ProtectedRoute permission="attendance.view"><Attendance /></ProtectedRoute>} />
         <Route path="student-attendance" element={<ProtectedRoute permission="attendance.view"><StudentAttendance /></ProtectedRoute>} />
         <Route path="absence-warnings" element={<ProtectedRoute permission="attendance.view"><AbsenceWarnings /></ProtectedRoute>} />

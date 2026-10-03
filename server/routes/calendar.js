@@ -9,108 +9,19 @@ router.use(authMiddleware)
 // ============================================
 // GET - كل الأحداث
 // ============================================
-router.get('/', checkPermission('calendar.view'), (req, res) => {
-  try {
-    const db = getDB()
-    const { year, month, type, from_date, to_date, show_holidays } = req.query
-
-    let sql = `
-      SELECT 
-        e.*,
-        u.full_name as created_by_name
-      FROM academic_events e
-      LEFT JOIN users u ON u.id = e.created_by
-      WHERE 1=1
-    `
-    const params = []
-
-    if (year && month) {
-      const monthStr = `${year}-${String(month).padStart(2, '0')}`
-      sql += ' AND (e.start_date LIKE ? OR e.end_date LIKE ?)'
-      params.push(`${monthStr}%`, `${monthStr}%`)
-    }
-
-    if (from_date) { sql += ' AND e.start_date >= ?'; params.push(from_date) }
-    if (to_date) { sql += ' AND e.start_date <= ?'; params.push(to_date) }
-    if (type) { sql += ' AND e.type = ?'; params.push(type) }
-    if (show_holidays === 'false') { sql += ' AND e.is_holiday = 0' }
-
-    sql += ' ORDER BY e.start_date ASC'
-
-    const rows = db.prepare(sql).all(...params)
-    res.json({ success: true, data: rows })
-  } catch (error) {
-    console.error('GET /calendar error:', error)
-    res.status(500).json({ success: false, error: error.message })
-  }
-})
-
-// ============================================
-// GET - أحداث شهر معين
-// ============================================
-router.get('/month/:year/:month', checkPermission('calendar.view'), (req, res) => {
-  try {
-    const db = getDB()
-    const { year, month } = req.params
-    const monthStr = `${year}-${String(month).padStart(2, '0')}`
-
-    const events = db.prepare(`
-      SELECT * FROM academic_events
-      WHERE start_date LIKE ? OR end_date LIKE ?
-      ORDER BY start_date ASC
-    `).all(`${monthStr}%`, `${monthStr}%`)
-
-    res.json({ success: true, data: events })
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message })
-  }
-})
-
-// ============================================
-// GET - أحداث قادمة (للوحة التحكم)
-// ============================================
 router.get('/upcoming', checkPermission('calendar.view'), (req, res) => {
   try {
     const db = getDB()
     const today = new Date().toISOString().split('T')[0]
+    const limit = parseInt(req.query.limit) || 5
 
     const events = db.prepare(`
       SELECT * FROM academic_events
       WHERE start_date >= ?
       ORDER BY start_date ASC
-      LIMIT 5
-    `).all(today)
+      LIMIT ?
+    `).all(today, limit)
 
-    res.json({ success: true, data: events })
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message })
-  }
-})
-
-// ============================================
-// GET - الأحداث لولي الأمر (العامة فقط)
-// ============================================
-router.get('/public', (req, res) => {
-  try {
-    const db = getDB()
-    const { year, month } = req.query
-
-    let sql = `
-      SELECT id, title, description, type, start_date, end_date, is_holiday, color
-      FROM academic_events
-      WHERE visible_to_parents = 1
-    `
-    const params = []
-
-    if (year && month) {
-      const monthStr = `${year}-${String(month).padStart(2, '0')}`
-      sql += ' AND (start_date LIKE ? OR end_date LIKE ?)'
-      params.push(`${monthStr}%`, `${monthStr}%`)
-    }
-
-    sql += ' ORDER BY start_date ASC'
-
-    const events = db.prepare(sql).all(...params)
     res.json({ success: true, data: events })
   } catch (error) {
     res.status(500).json({ success: false, error: error.message })

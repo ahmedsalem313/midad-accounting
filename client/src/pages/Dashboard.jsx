@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Users, Wallet, Receipt, AlertCircle, TrendingUp, Activity } from 'lucide-react'
-import api from '../services/api'
+import { Users, Wallet, Receipt, AlertCircle, TrendingUp, Activity, Calendar as CalendarIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-
+import { format } from 'date-fns'
+import { ar } from 'date-fns/locale'
 const StatCard = ({ icon: Icon, title, value, unit, color }) => (
   <div className="glass-card p-5 animate-slide-up">
     <div className="flex items-start justify-between">
@@ -24,10 +24,12 @@ const StatCard = ({ icon: Icon, title, value, unit, color }) => (
 export default function Dashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+    const [upcoming, setUpcoming] = useState([])
   const { user } = useAuth()
 
   useEffect(() => {
     fetchDashboard()
+    fetchUpcoming()
   }, [])
 
   const fetchDashboard = async () => {
@@ -40,7 +42,14 @@ export default function Dashboard() {
       setLoading(false)
     }
   }
-
+  const fetchUpcoming = async () => {
+    try {
+      const res = await api.get('/calendar/upcoming', { params: { limit: 5 } })
+      setUpcoming(res.data.data || [])
+    } catch (e) {
+      console.error('فشل تحميل الأحداث القادمة:', e)
+    }
+  }
   const fmt = (n) => (n || 0).toLocaleString('ar-IQ')
 
   if (loading) {
@@ -108,7 +117,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* حضور اليوم */}
+               {/* حضور اليوم */}
         <div className="glass-card p-6">
           <h3 className="font-bold mb-4 flex items-center gap-2">
             <Activity size={18} /> حضور اليوم
@@ -129,6 +138,84 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ============================================ */}
+      {/* الأحداث القادمة من التقويم */}
+      {/* ============================================ */}
+      {upcoming.length > 0 && (
+        <div className="glass-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold flex items-center gap-2">
+              <CalendarIcon size={18} className="text-primary-500" />
+              الأحداث القادمة
+            </h3>
+            <a
+              href="/calendar"
+              className="text-xs font-medium text-primary-500 hover:underline"
+            >
+              عرض التقويم ←
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+            {upcoming.map((ev) => {
+              const daysLeft = Math.ceil(
+                (new Date(ev.start_date) - new Date()) / (1000 * 60 * 60 * 24)
+              )
+              const typeColors = {
+                exam: '#EF4444',
+                holiday: '#10B981',
+                meeting: '#F59E0B',
+                activity: '#8B5CF6',
+                deadline: '#DC2626',
+                event: '#6366F1',
+              }
+              const color = ev.color || typeColors[ev.type] || '#6366F1'
+              const icons = {
+                exam: '📝',
+                holiday: '🎉',
+                meeting: '👥',
+                activity: '🎨',
+                deadline: '⏰',
+                event: '📌',
+              }
+
+              return (
+                <a
+                  key={ev.id}
+                  href="/calendar"
+                  className="p-3 rounded-xl transition-all hover:scale-[1.03] block"
+                  style={{
+                    background: `${color}10`,
+                    borderInlineStart: `4px solid ${color}`,
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xl">{icons[ev.type] || '📌'}</span>
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: daysLeft <= 3 ? 'rgba(239,68,68,0.15)' : `${color}20`,
+                        color: daysLeft <= 3 ? '#DC2626' : color,
+                      }}
+                    >
+                      {daysLeft === 0
+                        ? 'اليوم'
+                        : daysLeft === 1
+                        ? 'غدًا'
+                        : `${daysLeft} يوم`}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-sm truncate mb-1">{ev.title}</h4>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {format(new Date(ev.start_date), 'EEEE d MMM', { locale: ar })}
+                  </p>
+                </a>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
