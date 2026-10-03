@@ -9,6 +9,44 @@ router.use(authMiddleware)
 // ============================================
 // GET - كل الأحداث
 // ============================================
+// ============================================
+// GET - كل الأحداث
+// ============================================
+router.get('/', checkPermission('calendar.view'), (req, res) => {
+  try {
+    const db = getDB()
+    const { year, month, type, from_date, to_date, show_holidays } = req.query
+
+    let sql = `
+      SELECT 
+        e.*,
+        u.full_name as created_by_name
+      FROM academic_events e
+      LEFT JOIN users u ON u.id = e.created_by
+      WHERE 1=1
+    `
+    const params = []
+
+    if (year && month) {
+      const monthStr = `${year}-${String(month).padStart(2, '0')}`
+      sql += ' AND (e.start_date LIKE ? OR e.end_date LIKE ?)'
+      params.push(`${monthStr}%`, `${monthStr}%`)
+    }
+
+    if (from_date) { sql += ' AND e.start_date >= ?'; params.push(from_date) }
+    if (to_date) { sql += ' AND e.start_date <= ?'; params.push(to_date) }
+    if (type) { sql += ' AND e.type = ?'; params.push(type) }
+    if (show_holidays === 'false') { sql += ' AND e.is_holiday = 0' }
+
+    sql += ' ORDER BY e.start_date ASC'
+
+    const rows = db.prepare(sql).all(...params)
+    res.json({ success: true, data: rows })
+  } catch (error) {
+    console.error('GET /calendar error:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
 router.get('/upcoming', checkPermission('calendar.view'), (req, res) => {
   try {
     const db = getDB()
