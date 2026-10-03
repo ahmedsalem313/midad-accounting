@@ -3,7 +3,9 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import { createServer } from 'http'
-import { Server } from 'socket.io'
+import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
+import { setIo } from './utils/notify.js';
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -12,8 +14,7 @@ import { config } from './config.js'
 import { initDatabase } from './database/db.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { initWhatsApp } from './services/whatsapp.js'
-
-// Routes
+import notificationsRouter from './routes/notifications.js';
 import authRoutes from './routes/auth.js'
 import usersRoutes from './routes/users.js'
 import studentsRoutes from './routes/students.js'
@@ -21,6 +22,8 @@ import paymentsRoutes from './routes/payments.js'
 import expensesRoutes from './routes/expenses.js'
 import gradesRoutes from './routes/grades.js'
 import timetableRoutes from './routes/timetable.js'
+import timetableSettingsRoutes from './routes/timetableSettings.js'
+import timetableSubjectsRoutes from './routes/timetableSubjects.js'
 import attendanceRoutes from './routes/attendance.js'
 import payrollRoutes from './routes/payroll.js'
 import advancesRoutes from './routes/advances.js'
@@ -65,17 +68,12 @@ if (!fs.existsSync(config.uploads.path)) fs.mkdirSync(config.uploads.path, { rec
 initDatabase()
 
 // ============ API Routes ============
-// ============================================
-// GET /api/network-info
-// جلب IP الجهاز في الشبكة المحلية
-// ============================================
 app.get('/api/network-info', (req, res) => {
   const interfaces = os.networkInterfaces()
   const addresses = []
 
   for (const name of Object.keys(interfaces)) {
     for (const iface of interfaces[name]) {
-      // تجاهل IPv6 و loopback
       if (iface.family === 'IPv4' && !iface.internal) {
         addresses.push({
           interface: name,
@@ -89,11 +87,11 @@ app.get('/api/network-info', (req, res) => {
     success: true,
     data: {
       addresses,
-      // أول عنوان (عادةً en0 على Mac)
       primary: addresses[0]?.address || 'localhost',
     },
   })
 })
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', name: 'مداد المحاسبي', time: new Date().toISOString() })
 })
@@ -105,6 +103,8 @@ app.use('/api/payments', paymentsRoutes)
 app.use('/api/expenses', expensesRoutes)
 app.use('/api/grades', gradesRoutes)
 app.use('/api/timetable', timetableRoutes)
+app.use('/api/timetable-settings', timetableSettingsRoutes)
+app.use('/api/timetable-subjects', timetableSubjectsRoutes)
 app.use('/api/attendance', attendanceRoutes)
 app.use('/api/payroll', payrollRoutes)
 app.use('/api/salary-config', salaryConfigRoutes)
@@ -117,15 +117,37 @@ app.use('/api/parent', parentRoutes)
 app.use('/api/behavior', behaviorRoutes)
 app.use('/api/assignments', assignmentsRoutes)
 app.use('/api/notes', notesRoutes)
+app.use('/api/notifications', notificationsRouter);
 app.use('/api/communications', communicationsRoutes)
 app.use('/api/rewards', rewardsRoutes)
 app.use('/api/calendar', calendarRoutes)
-// users routes covers advisor
 // ============ Socket.IO ============
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) {
+    socket.user = null;
+    return next();
+  }
+  try {
+    const payload = jwt.verify(token, config.jwt.secret);
+    socket.user = payload;
+    next();
+  } catch {
+    socket.user = null;
+    next();
+  }
+});
+
 io.on('connection', (socket) => {
   console.log('🔌 Client connected:', socket.id)
+  if (socket.user) {
+    socket.join(`user:${socket.user.id}`);
+    if (socket.user.role) socket.join(`role:${socket.user.role}`);
+  }
   socket.on('disconnect', () => console.log('❌ Client disconnected:', socket.id))
 })
+
+setIo(io);
 
 // ============ WhatsApp ============
 initWhatsApp(io)

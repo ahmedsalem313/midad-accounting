@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Users, Wallet, Receipt, AlertCircle, TrendingUp, Activity, Calendar as CalendarIcon } from 'lucide-react'
+import { Users, Wallet, Receipt, AlertCircle, TrendingUp, Activity, Calendar as CalendarIcon, BarChart3, PieChart as PieIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
+import api from '../services/api'
+import {
+  ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  PieChart, Pie, Cell, LineChart, Line,
+} from 'recharts'
+
 const StatCard = ({ icon: Icon, title, value, unit, color }) => (
   <div className="glass-card p-5 animate-slide-up">
     <div className="flex items-start justify-between">
@@ -21,15 +28,21 @@ const StatCard = ({ icon: Icon, title, value, unit, color }) => (
   </div>
 )
 
+const CHART_COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#0EA5E9', '#EC4899', '#14B8A6']
+
 export default function Dashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-    const [upcoming, setUpcoming] = useState([])
+  const [upcoming, setUpcoming] = useState([])
+  const [yearly, setYearly] = useState(null)
+  const [studentsStats, setStudentsStats] = useState(null)
   const { user } = useAuth()
 
   useEffect(() => {
     fetchDashboard()
     fetchUpcoming()
+    fetchYearly()
+    fetchStudentsStats()
   }, [])
 
   const fetchDashboard = async () => {
@@ -42,6 +55,7 @@ export default function Dashboard() {
       setLoading(false)
     }
   }
+
   const fetchUpcoming = async () => {
     try {
       const res = await api.get('/calendar/upcoming', { params: { limit: 5 } })
@@ -50,7 +64,32 @@ export default function Dashboard() {
       console.error('فشل تحميل الأحداث القادمة:', e)
     }
   }
+
+  const fetchYearly = async () => {
+    try {
+      const res = await api.get('/reports/yearly')
+      setYearly(res.data.data)
+    } catch (e) {
+      console.error('فشل تحميل التقرير السنوي:', e)
+    }
+  }
+
+  const fetchStudentsStats = async () => {
+    try {
+      const res = await api.get('/reports/students-stats')
+      setStudentsStats(res.data.data)
+    } catch (e) {
+      console.error('فشل تحميل إحصائيات الطلاب:', e)
+    }
+  }
+
   const fmt = (n) => (n || 0).toLocaleString('ar-IQ')
+  const fmtShort = (n) => {
+    if (!n) return '0'
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
+    if (n >= 1000) return (n / 1000).toFixed(0) + 'K'
+    return n.toString()
+  }
 
   if (loading) {
     return (
@@ -59,6 +98,20 @@ export default function Dashboard() {
       </div>
     )
   }
+
+  // بيانات الرسم الشهري (من /reports/yearly)
+  const monthlyData = yearly?.months?.map(m => ({
+    name: m.monthName.slice(0, 4),
+    income: m.income,
+    expense: m.expense,
+    net: m.net,
+  })) || []
+
+  // بيانات دائرة توزيع الطلاب حسب الصف
+  const gradeData = studentsStats?.byGrade?.map(g => ({
+    name: g.grade,
+    value: g.count,
+  })) || []
 
   return (
     <div className="space-y-6">
@@ -69,6 +122,7 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* ============ البطاقات الإحصائية ============ */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={Users}       title="الطلاب النشطون"    value={fmt(data?.studentsCount)}  color="#6366F1" />
         <StatCard icon={Wallet}      title="الأقساط المحصلة"   value={fmt(data?.totalPaid)}     unit="د.ع" color="#10B981" />
@@ -76,8 +130,8 @@ export default function Dashboard() {
         <StatCard icon={AlertCircle} title="إجمالي المتأخرات"  value={fmt(data?.totalRemaining)} unit="د.ع" color="#EF4444" />
       </div>
 
+      {/* ============ الصف الأول: نسبة التحصيل + المعلمون + الحضور ============ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* نسبة التحصيل */}
         <div className="glass-card p-6">
           <h3 className="font-bold mb-4 flex items-center gap-2">
             <TrendingUp size={18} /> نسبة التحصيل
@@ -104,7 +158,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* المعلمون */}
         <div className="glass-card p-6">
           <h3 className="font-bold mb-4 flex items-center gap-2">
             <Users size={18} /> المعلمون
@@ -117,7 +170,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-               {/* حضور اليوم */}
         <div className="glass-card p-6">
           <h3 className="font-bold mb-4 flex items-center gap-2">
             <Activity size={18} /> حضور اليوم
@@ -139,9 +191,90 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ============================================ */}
-      {/* الأحداث القادمة من التقويم */}
-      {/* ============================================ */}
+      {/* ============ الصف الثاني: رسم الإيرادات والمصاريف ============ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="glass-card p-6 lg:col-span-2">
+          <h3 className="font-bold mb-4 flex items-center gap-2">
+            <BarChart3 size={18} /> الإيرادات والمصاريف الشهرية ({yearly?.year})
+          </h3>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart data={monthlyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} tickFormatter={fmtShort} />
+              <Tooltip
+                formatter={(value) => fmt(value) + ' د.ع'}
+                contentStyle={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 8 }}
+              />
+              <Legend />
+              <Bar dataKey="income" fill="#10B981" name="الإيرادات" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="expense" fill="#EF4444" name="المصاريف" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="glass-card p-6">
+          <h3 className="font-bold mb-4 flex items-center gap-2">
+            <PieIcon size={18} /> توزيع الطلاب حسب الصف
+          </h3>
+          {gradeData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={gradeData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={90}
+                  paddingAngle={3}
+                >
+                  {gradeData.map((_, i) => (
+                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value) => value + ' طالب'}
+                  contentStyle={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 8 }}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center py-16 text-sm" style={{ color: 'var(--text-secondary)' }}>لا توجد بيانات</p>
+          )}
+        </div>
+      </div>
+
+      {/* ============ الصف الثالث: صافي الربح الشهري ============ */}
+      <div className="glass-card p-6">
+        <h3 className="font-bold mb-4 flex items-center gap-2">
+          <TrendingUp size={18} /> صافي الربح الشهري ({yearly?.year})
+        </h3>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={monthlyData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
+            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 12 }} tickFormatter={fmtShort} />
+            <Tooltip
+              formatter={(value) => fmt(value) + ' د.ع'}
+              contentStyle={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: 8 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="net"
+              stroke="#6366F1"
+              strokeWidth={3}
+              name="صافي الربح"
+              dot={{ r: 5, fill: '#6366F1' }}
+              activeDot={{ r: 7 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ============ الأحداث القادمة ============ */}
       {upcoming.length > 0 && (
         <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
@@ -149,10 +282,7 @@ export default function Dashboard() {
               <CalendarIcon size={18} className="text-primary-500" />
               الأحداث القادمة
             </h3>
-            <a
-              href="/calendar"
-              className="text-xs font-medium text-primary-500 hover:underline"
-            >
+            <a href="/calendar" className="text-xs font-medium text-primary-500 hover:underline">
               عرض التقويم ←
             </a>
           </div>
@@ -163,21 +293,13 @@ export default function Dashboard() {
                 (new Date(ev.start_date) - new Date()) / (1000 * 60 * 60 * 24)
               )
               const typeColors = {
-                exam: '#EF4444',
-                holiday: '#10B981',
-                meeting: '#F59E0B',
-                activity: '#8B5CF6',
-                deadline: '#DC2626',
-                event: '#6366F1',
+                exam: '#EF4444', holiday: '#10B981', meeting: '#F59E0B',
+                activity: '#8B5CF6', deadline: '#DC2626', event: '#6366F1',
               }
               const color = ev.color || typeColors[ev.type] || '#6366F1'
               const icons = {
-                exam: '📝',
-                holiday: '🎉',
-                meeting: '👥',
-                activity: '🎨',
-                deadline: '⏰',
-                event: '📌',
+                exam: '📝', holiday: '🎉', meeting: '👥',
+                activity: '🎨', deadline: '⏰', event: '📌',
               }
 
               return (
@@ -185,10 +307,7 @@ export default function Dashboard() {
                   key={ev.id}
                   href="/calendar"
                   className="p-3 rounded-xl transition-all hover:scale-[1.03] block"
-                  style={{
-                    background: `${color}10`,
-                    borderInlineStart: `4px solid ${color}`,
-                  }}
+                  style={{ background: `${color}10`, borderInlineStart: `4px solid ${color}` }}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xl">{icons[ev.type] || '📌'}</span>
@@ -199,11 +318,7 @@ export default function Dashboard() {
                         color: daysLeft <= 3 ? '#DC2626' : color,
                       }}
                     >
-                      {daysLeft === 0
-                        ? 'اليوم'
-                        : daysLeft === 1
-                        ? 'غدًا'
-                        : `${daysLeft} يوم`}
+                      {daysLeft === 0 ? 'اليوم' : daysLeft === 1 ? 'غدًا' : `${daysLeft} يوم`}
                     </span>
                   </div>
                   <h4 className="font-bold text-sm truncate mb-1">{ev.title}</h4>

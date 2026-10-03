@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import ExportButton from '../components/ExportButton'
 import { useAuth } from '../contexts/AuthContext'
 
 const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
@@ -193,14 +194,14 @@ export default function Rewards() {
         </div>
 
         <div className="flex gap-2">
-          
-          {hasPermission('rewards.create') && (
-            <button onClick={openAdd} className="btn-primary flex items-center gap-2">
-              <Plus size={18} />
-              إضافة مكافأة
-            </button>
-          )}
-        </div>
+  
+  {hasPermission('rewards.create') && (
+    <button onClick={openAdd} className="btn-primary flex items-center gap-2">
+      <Plus size={18} />
+      إضافة مكافأة
+    </button>
+  )}
+</div>
       </div>
 
       {/* الإحصائيات */}

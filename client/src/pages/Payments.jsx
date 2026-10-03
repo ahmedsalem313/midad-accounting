@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import ExportButton from '../components/ExportButton'
 import { useAuth } from '../contexts/AuthContext'
 import FullReceipt from './FullReceipt'
 const METHODS = [
@@ -317,12 +318,30 @@ export default function Payments() {
           </p>
         </div>
 
-        {hasPermission('payments.create') && (
-          <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
-            <Plus size={18} />
-            تسجيل دفعة
-          </button>
-        )}
+       <div className="flex gap-2">
+  <ExportButton
+    data={filteredPayments}
+    filename="الأقساط"
+    sheetName="المدفوعات"
+    columns={[
+      { key: 'receipt_number', label: 'رقم الإيصال' },
+      { key: 'student_name', label: 'الطالب' },
+      { key: 'grade', label: 'الصف' },
+      { key: 'section', label: 'الشعبة' },
+      { key: 'amount', label: 'المبلغ الكلي' },
+      { key: 'paid_amount', label: 'المدفوع' },
+      { key: 'method', label: 'طريقة الدفع' },
+      { key: 'payment_date', label: 'تاريخ الدفع' },
+      { key: 'notes', label: 'ملاحظات' },
+    ]}
+  />
+  {hasPermission('payments.create') && (
+    <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
+      <Plus size={18} />
+      تسجيل دفعة
+    </button>
+  )}
+</div>
       </div>
 
       {/* Stats Cards */}

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import ExportButton from '../components/ExportButton'
 import { useAuth } from '../contexts/AuthContext'
 import { getTeacherTitle, getCurrentSchoolType } from '../utils/schoolData'
 
@@ -165,12 +166,28 @@ export default function Advances() {
           </p>
         </div>
 
-        {hasPermission('advances.request') && (
-          <button onClick={openAdd} className="btn-primary flex items-center gap-2">
-            <Plus size={18} />
-            {isTeacher ? 'طلب سلفة' : 'إضافة سلفة'}
-          </button>
-        )}
+        <div className="flex gap-2 flex-wrap">
+  <ExportButton
+    data={filtered}
+    filename="السلف"
+    sheetName="السلف"
+    columns={[
+      { key: 'teacher_name', label: 'المعلم' },
+      { key: 'amount', label: 'المبلغ' },
+      { key: 'reason', label: 'السبب' },
+      { key: 'request_date', label: 'تاريخ الطلب' },
+      { key: 'deduction_month', label: 'شهر الخصم', format: (v) => MONTHS[v - 1] },
+      { key: 'deduction_year', label: 'سنة الخصم' },
+      { key: 'status', label: 'الحالة', format: (v) => getStatusInfo(v).label },
+    ]}
+  />
+  {hasPermission('advances.request') && (
+    <button onClick={openAdd} className="btn-primary flex items-center gap-2">
+      <Plus size={18} />
+      {isTeacher ? 'طلب سلفة' : 'إضافة سلفة'}
+    </button>
+  )}
+</div>
       </div>
 
       {/* Stats (للمدير) */}

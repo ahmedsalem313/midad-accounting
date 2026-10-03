@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Lock, User, LogIn } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
-
+import { connectSocket } from '../lib/socket';
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')

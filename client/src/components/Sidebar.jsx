@@ -44,6 +44,8 @@ const MENU_GROUPS = [
     items: [
       { path: '/grades',          label: 'الدرجات',              icon: GraduationCap, perm: 'grades.view' },
       { path: '/timetable',       label: 'جدول الحصص',           icon: Calendar,      perm: 'timetable.view' },
+      { path: '/timetable-settings', label: 'إعدادات الجدول',    icon: SettingsIcon,  perm: 'timetable.edit' },
+      { path: '/timetable-subjects', label: 'المواد الدراسية', icon: BookOpen, perm: 'timetable.edit' },
       { path: '/calendar',        label: 'التقويم الأكاديمي',    icon: Calendar,      perm: 'calendar.view' },
       { path: '/assignments',     label: 'الواجبات',             icon: BookOpen,      perm: 'assignments.view' },
       { path: '/late-assignments',label: 'المتأخرون بالواجبات',  icon: AlertTriangle, perm: 'assignments.view' },
@@ -56,6 +58,7 @@ const MENU_GROUPS = [
     color: '#10B981',
     collapsible: true,
     items: [
+      { path: '/attendance',          label: 'حضور المعلمين',  icon: CheckSquare,   perm: 'attendance.view' },
       { path: '/student-attendance', label: 'حضور الطلاب',    icon: CheckSquare,   perm: 'attendance.view' },
       { path: '/absence-warnings',   label: 'إنذارات الغياب', icon: AlertTriangle, perm: 'attendance.view' },
       { path: '/behavior',           label: 'تقييم السلوك',   icon: Award,         perm: 'grades.view' },

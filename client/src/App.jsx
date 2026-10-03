@@ -32,12 +32,19 @@ import Communications from './pages/Communications'
 import Rewards from './pages/Rewards'
 import QRCodes from './pages/QRCodes'
 import StudentAbsenceManagement from './pages/StudentAbsenceManagement'
+import { useEffect } from 'react';
+import { connectSocket } from './lib/socket';
+import TimetableSettings from './pages/TimetableSettings'
+import TimetableSubjects from './pages/TimetableSubjects'
 // ============================================
 // Protected Route للأدمن والمستخدمين
 // ============================================
 function ProtectedRoute({ children, permission }) {
   const { user, hasPermission, loading } = useAuth()
-
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (token) connectSocket(token);
+}, []);
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -136,6 +143,8 @@ export default function App() {
 <Route path="qr-codes" element={<ProtectedRoute permission="settings.view"><QRCodes /></ProtectedRoute>} />
         {/* الجدول والحضور */}
         <Route path="timetable" element={<ProtectedRoute permission="timetable.view"><Timetable /></ProtectedRoute>} />
+        <Route path="timetable-settings" element={<ProtectedRoute permission="timetable.edit"><TimetableSettings /></ProtectedRoute>} />
+        <Route path="timetable-subjects" element={<ProtectedRoute permission="timetable.edit"><TimetableSubjects /></ProtectedRoute>} />
         <Route path="calendar" element={<ProtectedRoute permission="calendar.view"><Calendar /></ProtectedRoute>} />
         <Route path="attendance" element={<ProtectedRoute permission="attendance.view"><Attendance /></ProtectedRoute>} />
         <Route path="student-attendance" element={<ProtectedRoute permission="attendance.view"><StudentAttendance /></ProtectedRoute>} />

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import ExportButton from '../components/ExportButton'
 import { useAuth } from '../contexts/AuthContext'
 
 const CATEGORIES = [
@@ -34,7 +35,7 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
-  const [filterMonth, setFilterMonth] = useState(new Date().toISOString().substring(0, 7))
+ const [filterMonth, setFilterMonth] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
 
@@ -167,12 +168,28 @@ export default function Expenses() {
           </p>
         </div>
 
-        {hasPermission('expenses.create') && (
-          <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
-            <Plus size={18} />
-            إضافة مصروف
-          </button>
-        )}
+        <div className="flex gap-2">
+  <ExportButton
+    data={filteredExpenses}
+    filename="المصاريف"
+    sheetName="المصاريف"
+    columns={[
+      { key: 'expense_date', label: 'التاريخ' },
+      { key: 'category', label: 'الفئة', format: (v) => getCategory(v).label },
+      { key: 'description', label: 'الوصف' },
+      { key: 'amount', label: 'المبلغ' },
+      { key: 'payment_method', label: 'طريقة الدفع', format: (v) => getMethod(v).label },
+      { key: 'receipt_number', label: 'رقم الوصل' },
+      { key: 'notes', label: 'ملاحظات' },
+    ]}
+  />
+  {hasPermission('expenses.create') && (
+    <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
+      <Plus size={18} />
+      إضافة مصروف
+    </button>
+  )}
+</div>
       </div>
 
       {/* Stats */}

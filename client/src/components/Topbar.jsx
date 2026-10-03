@@ -1,5 +1,6 @@
-import { Search, Bell, Moon, Sun, Menu, LogOut } from 'lucide-react'
+import { Search, Moon, Sun, Menu, LogOut } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import NotificationBell from './NotificationBell'
 
 export default function Topbar({ darkMode, setDarkMode, toggleSidebar }) {
   const { user, logout } = useAuth()
@@ -25,9 +26,7 @@ export default function Topbar({ darkMode, setDarkMode, toggleSidebar }) {
           {darkMode ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <button className="btn-ghost !p-2.5 relative">
-          <Bell size={18} />
-        </button>
+        <NotificationBell />
 
         <button
           onClick={logout}

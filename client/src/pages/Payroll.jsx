@@ -6,9 +6,10 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
+import ExportButton from '../components/ExportButton'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-
+import BulkPrintSlips from '../components/BulkPrintSlips'
 const SALARY_TYPES = {
   fixed:      { label: 'مقطوع',  color: '#6366F1', icon: '💰' },
   per_lesson: { label: 'بالحصة', color: '#10B981', icon: '📚' },
@@ -36,6 +37,7 @@ export default function Payroll() {
   const [editingRecord, setEditingRecord] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [showPreviewModal, setShowPreviewModal] = useState(false)
+  const [showBulkPrint, setShowBulkPrint] = useState(false)
   const [previewData, setPreviewData] = useState(null)
 
   useEffect(() => {
@@ -185,23 +187,51 @@ export default function Payroll() {
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {hasPermission('payroll.calculate') && (
-            <button
-              onClick={() => navigate('/salary-config')}
-              className="btn-ghost border-2 flex items-center gap-2"
-              style={{ borderColor: 'var(--border-color)' }}
-            >
-              <Settings size={18} />
-              إعداد الرواتب
-            </button>
-          )}
-          {hasPermission('payroll.calculate') && (
-            <button onClick={openPreview} className="btn-primary flex items-center gap-2">
-              <Calculator size={18} />
-              حساب الشهر
-            </button>
-          )}
-        </div>
+  <ExportButton
+    data={records}
+    filename={`الرواتب_${MONTHS[selectedMonth - 1]}_${selectedYear}`}
+    sheetName="الرواتب"
+    columns={[
+      { key: 'teacher_name', label: 'المعلم' },
+      { key: 'salary_type', label: 'النوع', format: (v) => getTypeInfo(v).label },
+      { key: 'base_salary', label: 'الأساسي' },
+      { key: 'allowances', label: 'البدلات' },
+      { key: 'bonus', label: 'المكافآت' },
+      { key: 'absence_deduction', label: 'خصم الغياب' },
+      { key: 'late_deduction', label: 'خصم التأخير' },
+      { key: 'advances_deduction', label: 'خصم السلف' },
+      { key: 'other_deductions', label: 'خصومات أخرى' },
+      { key: 'net_salary', label: 'الصافي' },
+      { key: 'status', label: 'الحالة', format: (v) => getStatusInfo(v).label },
+    ]}
+  />
+  {records.length > 0 && (
+  <button
+    onClick={() => setShowBulkPrint(true)}
+    className="btn-ghost border-2 flex items-center gap-2"
+    style={{ borderColor: 'var(--border-color)' }}
+  >
+    <Printer size={18} />
+    طباعة الكشوف ({records.length})
+  </button>
+)}
+  {hasPermission('payroll.calculate') && (
+    <button
+      onClick={() => navigate('/salary-config')}
+      className="btn-ghost border-2 flex items-center gap-2"
+      style={{ borderColor: 'var(--border-color)' }}
+    >
+      <Settings size={18} />
+      إعداد الرواتب
+    </button>
+  )}
+  {hasPermission('payroll.calculate') && (
+    <button onClick={openPreview} className="btn-primary flex items-center gap-2">
+      <Calculator size={18} />
+      حساب الشهر
+    </button>
+  )}
+</div>
       </div>
 
       {/* الفلاتر */}
@@ -553,6 +583,13 @@ export default function Payroll() {
           </div>
         </div>
       )}
+      {showBulkPrint && (
+  <BulkPrintSlips
+    records={records}
+    title={`كشوف رواتب ${MONTHS[selectedMonth - 1]} ${selectedYear}`}
+    onClose={() => setShowBulkPrint(false)}
+  />
+)}
     </div>
   )
 }

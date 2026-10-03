@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import {
+  
   Plus, Search, Edit, Trash2, X, Users,
   Phone, GraduationCap, AlertCircle
 } from 'lucide-react'
@@ -7,7 +8,7 @@ import toast from 'react-hot-toast'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { getGradesByType, SECTIONS, getCurrentSchoolType } from '../utils/schoolData'
-
+import ExportButton from '../components/ExportButton'
 export default function Students() {
   const { hasPermission } = useAuth()
   const schoolType = getCurrentSchoolType()
@@ -151,9 +152,26 @@ export default function Students() {
             <Plus size={18} />
             إضافة طالب
           </button>
+          
         )}
       </div>
-
+<ExportButton
+  data={filteredStudents}
+  filename="قائمة_الطلاب"
+  sheetName="الطلاب"
+  columns={[
+    { key: 'student_number', label: 'الرقم' },
+    { key: 'full_name', label: 'الاسم الكامل' },
+    { key: 'grade', label: 'الصف' },
+    { key: 'section', label: 'الشعبة' },
+    { key: 'guardian_name', label: 'ولي الأمر' },
+    { key: 'guardian_phone', label: 'الهاتف' },
+    { key: 'guardian_phone_alt', label: 'هاتف بديل' },
+    { key: 'total_fees', label: 'الرسوم الكلية' },
+    { key: 'address', label: 'العنوان' },
+    { key: 'notes', label: 'ملاحظات' },
+  ]}
+/>
       <div className="glass-card p-4 flex flex-wrap gap-3 items-center">
         <div className="flex-1 min-w-[240px] relative">
           <Search size={18} className="absolute top-1/2 -translate-y-1/2 start-3"

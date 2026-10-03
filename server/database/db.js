@@ -3,7 +3,8 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { config } from '../config.js'
-
+import { createNotificationsTable } from './migrations/notifications.js'
+import { createTimetableTables } from './migrations/timetable.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -26,6 +27,9 @@ export function initDatabase() {
   const schema = fs.readFileSync(schemaPath, 'utf8')
   db.exec(schema)
 
+  // 🔔 إنشاء جدول الإشعارات
+  createNotificationsTable(db)
+createTimetableTables(db)
   console.log('✅ Database initialized at:', config.database.path)
   return db
 }
