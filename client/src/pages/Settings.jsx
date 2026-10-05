@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react'
 import { Save, School, Settings as SettingsIcon, Calendar, Shield } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
-import { SCHOOL_TYPES, setCurrentSchoolType } from '../utils/schoolData'
+import {
+  SCHOOL_TYPES,
+  setCurrentSchoolType,
+} from '../utils/schoolData'
+import {
+  SCHOOL_GENDERS,
+  setCurrentSchoolGender,
+} from '../utils/schoolDataExtensions'
 
 const ALL_DAYS = [
   { value: 0, label: 'السبت' },
@@ -24,6 +31,7 @@ export default function Settings() {
   const [settings, setSettings] = useState({
     school_name: 'مدرسة مداد النموذجية',
     school_type: localStorage.getItem('midad_school_type') || SCHOOL_TYPES.PRIMARY,
+    school_gender: localStorage.getItem('midad_school_gender') || SCHOOL_GENDERS.MIXED,
     working_days: JSON.parse(localStorage.getItem('midad_working_days') || '[0,1,2,3,4,5]'),
     block_grades_enabled: false,
     block_grades_min_debt: 0,
@@ -33,16 +41,20 @@ export default function Settings() {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  // جلب الإعدادات من السيرفر
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         const res = await api.get('/settings')
         const data = res.data.data || {}
+
+        if (data.school_type) localStorage.setItem('midad_school_type', data.school_type)
+        if (data.school_gender) localStorage.setItem('midad_school_gender', data.school_gender)
+
         setSettings((prev) => ({
           ...prev,
           school_name: data.school_name || prev.school_name,
           school_type: data.school_type || prev.school_type,
+          school_gender: data.school_gender || prev.school_gender,
           block_grades_enabled: data.block_grades_enabled === 'true',
           block_grades_min_debt: parseFloat(data.block_grades_min_debt) || 0,
           block_grades_print: data.block_grades_print !== 'false',
@@ -75,12 +87,14 @@ export default function Settings() {
     setSaving(true)
     try {
       setCurrentSchoolType(settings.school_type)
+      setCurrentSchoolGender(settings.school_gender)
       localStorage.setItem('midad_school_name', settings.school_name)
       localStorage.setItem('midad_working_days', JSON.stringify(settings.working_days))
 
       await api.put('/settings', {
         school_name: settings.school_name,
         school_type: settings.school_type,
+        school_gender: settings.school_gender,
         working_days: JSON.stringify(settings.working_days),
         block_grades_enabled: settings.block_grades_enabled ? 'true' : 'false',
         block_grades_min_debt: String(settings.block_grades_min_debt),
@@ -117,6 +131,7 @@ export default function Settings() {
           معلومات المدرسة
         </h3>
 
+        {/* اسم المدرسة */}
         <div>
           <label className="text-sm font-medium block mb-1.5">اسم المدرسة</label>
           <input
@@ -127,39 +142,101 @@ export default function Settings() {
           />
         </div>
 
+        {/* نوع المدرسة */}
         <div>
           <label className="text-sm font-medium block mb-2">نوع المدرسة</label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <button
               type="button"
               onClick={() => setSettings({ ...settings, school_type: SCHOOL_TYPES.PRIMARY })}
-              className="p-4 rounded-xl border-2 transition-all text-start"
+              className="p-4 rounded-xl border-2 transition-all text-center"
               style={{
                 borderColor: settings.school_type === SCHOOL_TYPES.PRIMARY ? '#6366F1' : 'var(--border-color)',
                 background: settings.school_type === SCHOOL_TYPES.PRIMARY ? 'rgba(99,102,241,0.1)' : 'var(--bg-card)'
               }}
             >
               <div className="text-2xl mb-2">🎒</div>
-              <div className="font-bold">مدرسة ابتدائية</div>
+              <div className="font-bold">ابتدائي فقط</div>
               <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                الصف الأول — السادس الابتدائي
+                6 صفوف
               </div>
             </button>
 
             <button
               type="button"
               onClick={() => setSettings({ ...settings, school_type: SCHOOL_TYPES.SECONDARY })}
-              className="p-4 rounded-xl border-2 transition-all text-start"
+              className="p-4 rounded-xl border-2 transition-all text-center"
               style={{
                 borderColor: settings.school_type === SCHOOL_TYPES.SECONDARY ? '#6366F1' : 'var(--border-color)',
                 background: settings.school_type === SCHOOL_TYPES.SECONDARY ? 'rgba(99,102,241,0.1)' : 'var(--bg-card)'
               }}
             >
               <div className="text-2xl mb-2">📚</div>
-              <div className="font-bold">مدرسة ثانوية</div>
+              <div className="font-bold">إعدادي فقط</div>
               <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                متوسط + إعدادي (علمي / أدبي)
+                3 متوسط + 6 إعدادي
               </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSettings({ ...settings, school_type: 'mixed' })}
+              className="p-4 rounded-xl border-2 transition-all text-center"
+              style={{
+                borderColor: settings.school_type === 'mixed' ? '#6366F1' : 'var(--border-color)',
+                background: settings.school_type === 'mixed' ? 'rgba(99,102,241,0.1)' : 'var(--bg-card)'
+              }}
+            >
+              <div className="text-2xl mb-2">🏫</div>
+              <div className="font-bold">الاثنان</div>
+              <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                15 صف
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* جنس المدرسة */}
+        <div>
+          <label className="text-sm font-medium block mb-2">جنس المدرسة</label>
+          <div className="grid grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => setSettings({ ...settings, school_gender: SCHOOL_GENDERS.BOYS })}
+              className="p-4 rounded-xl border-2 transition-all text-center"
+              style={{
+                borderColor: settings.school_gender === SCHOOL_GENDERS.BOYS ? '#3B82F6' : 'var(--border-color)',
+                background: settings.school_gender === SCHOOL_GENDERS.BOYS ? 'rgba(59,130,246,0.1)' : 'var(--bg-card)'
+              }}
+            >
+              <div className="text-2xl mb-2">👦</div>
+              <div className="font-bold">بنين</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSettings({ ...settings, school_gender: SCHOOL_GENDERS.GIRLS })}
+              className="p-4 rounded-xl border-2 transition-all text-center"
+              style={{
+                borderColor: settings.school_gender === SCHOOL_GENDERS.GIRLS ? '#EC4899' : 'var(--border-color)',
+                background: settings.school_gender === SCHOOL_GENDERS.GIRLS ? 'rgba(236,72,153,0.1)' : 'var(--bg-card)'
+              }}
+            >
+              <div className="text-2xl mb-2">👧</div>
+              <div className="font-bold">بنات</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSettings({ ...settings, school_gender: SCHOOL_GENDERS.MIXED })}
+              className="p-4 rounded-xl border-2 transition-all text-center"
+              style={{
+                borderColor: settings.school_gender === SCHOOL_GENDERS.MIXED ? '#8B5CF6' : 'var(--border-color)',
+                background: settings.school_gender === SCHOOL_GENDERS.MIXED ? 'rgba(139,92,246,0.1)' : 'var(--bg-card)'
+              }}
+            >
+              <div className="text-2xl mb-2">👫</div>
+              <div className="font-bold">مختلط</div>
             </button>
           </div>
         </div>
