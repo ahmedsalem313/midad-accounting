@@ -33,6 +33,7 @@ const MENU_GROUPS = [
       { path: '/students',    label: 'قائمة الطلاب',    icon: Users,        perm: 'students.view' },
       { path: '/my-students', label: 'طلابي',           icon: GraduationCap,perm: 'students.view' },
       { path: '/top-students',label: 'الأوائل',         icon: Trophy,       perm: 'students.view' },
+      { path: '/students/promotion', label: 'ترحيل الطلاب', icon: GraduationCap, perm: 'students.edit' },
     ],
   },
   {

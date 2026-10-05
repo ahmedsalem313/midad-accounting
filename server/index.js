@@ -41,6 +41,7 @@ import rewardsRoutes from './routes/rewards.js'
 import calendarRoutes from './routes/calendar.js'
 import studentHistoryRoutes from './routes/studentHistory.js'
 const __filename = fileURLToPath(import.meta.url)
+import promotionsRoutes from './routes/promotions.js'
 const __dirname = path.dirname(__filename)
 
 // ============ الإعداد الأساسي ============
@@ -56,7 +57,7 @@ app.use(cors(config.cors))
 app.use(morgan('dev'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
-
+app.use('/api/promotions', promotionsRoutes)
 // الملفات المرفوعة
 app.use('/uploads', express.static(config.uploads.path))
 

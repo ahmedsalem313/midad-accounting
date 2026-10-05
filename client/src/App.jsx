@@ -37,7 +37,7 @@ import StudentAbsenceManagement from './pages/StudentAbsenceManagement'
 import TimetableSettings from './pages/TimetableSettings'
 import TimetableSubjects from './pages/TimetableSubjects'
 import StudentProfile from './pages/StudentProfile'
-
+import Promotions from './pages/Promotions'
 // ============================================
 // Protected Route للأدمن والمستخدمين
 // ============================================
@@ -118,6 +118,7 @@ export default function App() {
         {/* الطلاب */}
         <Route path="my-students" element={<ProtectedRoute permission="students.view"><MyStudents /></ProtectedRoute>} />
         <Route path="students" element={<ProtectedRoute permission="students.view"><Students /></ProtectedRoute>} />
+        <Route path="students/promotion" element={<ProtectedRoute permission="students.edit"><Promotions /></ProtectedRoute>} />
         <Route path="students/:studentId" element={<ProtectedRoute permission="students.view"><StudentProfile /></ProtectedRoute>} />
         <Route path="students/:studentId/notes" element={<ProtectedRoute permission="notes.view"><StudentNotes /></ProtectedRoute>} />
         <Route path="students/:studentId/communications" element={<ProtectedRoute permission="communications.view"><Communications /></ProtectedRoute>} />
