@@ -39,6 +39,7 @@ import notesRoutes from './routes/notes.js'
 import communicationsRoutes from './routes/communications.js'
 import rewardsRoutes from './routes/rewards.js'
 import calendarRoutes from './routes/calendar.js'
+import studentHistoryRoutes from './routes/studentHistory.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -99,6 +100,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/users', usersRoutes)
 app.use('/api/students', studentsRoutes)
+app.use('/api/student-history', studentHistoryRoutes)
 app.use('/api/payments', paymentsRoutes)
 app.use('/api/expenses', expensesRoutes)
 app.use('/api/grades', gradesRoutes)

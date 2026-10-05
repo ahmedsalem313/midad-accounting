@@ -3,6 +3,7 @@ import {
   Plus, Search, Edit, Trash2, X, Users,
   Phone, GraduationCap, AlertCircle, FileDown
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -64,10 +65,8 @@ export default function Students() {
   }
 
   const filteredStudents = students.filter((s) => {
-    // فلتر الجنس
     if (filterGender && s.gender !== filterGender) return false
 
-    // فلتر البحث
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -137,7 +136,6 @@ export default function Students() {
     }
   }
 
-  // إحصائيات سريعة
   const stats = {
     total: filteredStudents.length,
     male: filteredStudents.filter((s) => s.gender !== 'female').length,
@@ -305,7 +303,14 @@ export default function Students() {
                       className="border-b hover:bg-primary-50/40 dark:hover:bg-primary-900/10 transition-colors"
                       style={{ borderColor: 'var(--border-color)' }}>
                     <td className="p-3" style={{ color: 'var(--text-secondary)' }}>{i + 1}</td>
-                    <td className="p-3 font-semibold">{s.full_name}</td>
+                    <td className="p-3 font-semibold">
+                      <Link
+                        to={`/students/${s.id}`}
+                        className="text-primary-600 hover:text-primary-800 hover:underline"
+                      >
+                        {s.full_name}
+                      </Link>
+                    </td>
                     <td className="p-3 text-center">
                       <span title={s.gender === 'female' ? 'أنثى' : 'ذكر'} className="text-lg">
                         {s.gender === 'female' ? '👧' : '👦'}
