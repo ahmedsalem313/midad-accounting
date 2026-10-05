@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import {
-  
   Plus, Search, Edit, Trash2, X, Users,
-  Phone, GraduationCap, AlertCircle
+  Phone, GraduationCap, AlertCircle, FileDown
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { getGradesByType, SECTIONS, getCurrentSchoolType } from '../utils/schoolData'
 import ExportButton from '../components/ExportButton'
+
 export default function Students() {
   const { hasPermission } = useAuth()
   const schoolType = getCurrentSchoolType()
@@ -18,6 +18,7 @@ export default function Students() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterGrade, setFilterGrade] = useState('')
+  const [filterGender, setFilterGender] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editingStudent, setEditingStudent] = useState(null)
 
@@ -46,24 +47,27 @@ export default function Students() {
   }, [filterGrade])
 
   const fetchStudents = async () => {
-  try {
-    setLoading(true)
-    const params = {}
-    if (filterGrade) params.grade = filterGrade
-    const res = await api.get('/students', { params })
+    try {
+      setLoading(true)
+      const params = {}
+      if (filterGrade) params.grade = filterGrade
+      const res = await api.get('/students', { params })
 
-    // فلترة الطلاب حسب نوع المدرسة الحالي
-    const currentGrades = getGradesByType(schoolType)
-    const filtered = res.data.data.filter((s) => currentGrades.includes(s.grade))
-    setStudents(filtered)
-  } catch (e) {
-    toast.error('فشل تحميل الطلاب')
-  } finally {
-    setLoading(false)
+      const currentGrades = getGradesByType(schoolType)
+      const filtered = res.data.data.filter((s) => currentGrades.includes(s.grade))
+      setStudents(filtered)
+    } catch (e) {
+      toast.error('فشل تحميل الطلاب')
+    } finally {
+      setLoading(false)
+    }
   }
-}
 
   const filteredStudents = students.filter((s) => {
+    // فلتر الجنس
+    if (filterGender && s.gender !== filterGender) return false
+
+    // فلتر البحث
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -133,8 +137,16 @@ export default function Students() {
     }
   }
 
+  // إحصائيات سريعة
+  const stats = {
+    total: filteredStudents.length,
+    male: filteredStudents.filter((s) => s.gender !== 'female').length,
+    female: filteredStudents.filter((s) => s.gender === 'female').length,
+  }
+
   return (
     <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -142,36 +154,84 @@ export default function Students() {
             إدارة الطلاب
           </h2>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            {schoolType === 'primary' ? '🎒 مدرسة ابتدائية' : '📚 مدرسة ثانوية'} —
+            {schoolType === 'primary' ? '🎒 مدرسة ابتدائية' :
+             schoolType === 'secondary' ? '📚 مدرسة إعدادية' :
+             '🏫 مدرسة مختلطة'} —
             إجمالي: {students.length} طالب
           </p>
         </div>
 
-        {hasPermission('students.create') && (
-          <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
-            <Plus size={18} />
-            إضافة طالب
-          </button>
-          
-        )}
+        <div className="flex gap-2 flex-wrap">
+          <ExportButton
+            data={filteredStudents}
+            filename="قائمة_الطلاب"
+            sheetName="الطلاب"
+            columns={[
+              { key: 'student_number', label: 'الرقم' },
+              { key: 'full_name', label: 'الاسم الكامل' },
+              { key: 'grade', label: 'الصف' },
+              { key: 'section', label: 'الشعبة' },
+              { key: 'gender', label: 'الجنس', format: (v) => (v === 'female' ? 'أنثى' : 'ذكر') },
+              { key: 'guardian_name', label: 'ولي الأمر' },
+              { key: 'guardian_phone', label: 'الهاتف' },
+              { key: 'guardian_phone_alt', label: 'هاتف بديل' },
+              { key: 'total_fees', label: 'الرسوم الكلية' },
+              { key: 'address', label: 'العنوان' },
+              { key: 'notes', label: 'ملاحظات' },
+            ]}
+          />
+          {hasPermission('students.create') && (
+            <button onClick={openAddModal} className="btn-primary flex items-center gap-2">
+              <Plus size={18} />
+              إضافة طالب
+            </button>
+          )}
+        </div>
       </div>
-<ExportButton
-  data={filteredStudents}
-  filename="قائمة_الطلاب"
-  sheetName="الطلاب"
-  columns={[
-    { key: 'student_number', label: 'الرقم' },
-    { key: 'full_name', label: 'الاسم الكامل' },
-    { key: 'grade', label: 'الصف' },
-    { key: 'section', label: 'الشعبة' },
-    { key: 'guardian_name', label: 'ولي الأمر' },
-    { key: 'guardian_phone', label: 'الهاتف' },
-    { key: 'guardian_phone_alt', label: 'هاتف بديل' },
-    { key: 'total_fees', label: 'الرسوم الكلية' },
-    { key: 'address', label: 'العنوان' },
-    { key: 'notes', label: 'ملاحظات' },
-  ]}
-/>
+
+      {/* إحصائيات سريعة */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="glass-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                 style={{ background: 'rgba(99,102,241,0.15)', color: '#6366F1' }}>
+              <Users size={20} />
+            </div>
+            <div>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>الإجمالي</p>
+              <p className="text-xl font-bold">{stats.total}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                 style={{ background: 'rgba(59,130,246,0.15)', color: '#3B82F6' }}>
+              <span className="text-xl">👦</span>
+            </div>
+            <div>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>بنين</p>
+              <p className="text-xl font-bold text-blue-500">{stats.male}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                 style={{ background: 'rgba(236,72,153,0.15)', color: '#EC4899' }}>
+              <span className="text-xl">👧</span>
+            </div>
+            <div>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>بنات</p>
+              <p className="text-xl font-bold text-pink-500">{stats.female}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
       <div className="glass-card p-4 flex flex-wrap gap-3 items-center">
         <div className="flex-1 min-w-[240px] relative">
           <Search size={18} className="absolute top-1/2 -translate-y-1/2 start-3"
@@ -195,8 +255,24 @@ export default function Students() {
             <option key={g} value={g}>{g}</option>
           ))}
         </select>
+
+        <select
+          value={filterGender}
+          onChange={(e) => setFilterGender(e.target.value)}
+          className="input-modern !w-auto min-w-[140px]"
+        >
+          <option value="">كل الأجناس</option>
+          <option value="male">👦 بنين</option>
+          <option value="female">👧 بنات</option>
+        </select>
+
+        <div className="text-xs px-3 py-2 rounded-lg whitespace-nowrap font-semibold"
+             style={{ color: 'var(--text-secondary)', background: 'rgba(99,102,241,0.08)' }}>
+          {filteredStudents.length} / {students.length} طالب
+        </div>
       </div>
 
+      {/* Table */}
       <div className="glass-card overflow-hidden">
         {loading ? (
           <div className="p-10 text-center">
@@ -214,12 +290,13 @@ export default function Students() {
                 <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
                   <th className="p-3 text-start">#</th>
                   <th className="p-3 text-start">اسم الطالب</th>
+                  <th className="p-3 text-center">الجنس</th>
                   <th className="p-3 text-start">الصف</th>
                   <th className="p-3 text-start">ولي الأمر</th>
                   <th className="p-3 text-start">الهاتف</th>
-                 <th className="p-3 text-start">الرسوم</th>
-<th className="p-3 text-center">حالة الغياب</th>
-<th className="p-3 text-center">إجراءات</th>
+                  <th className="p-3 text-start">الرسوم</th>
+                  <th className="p-3 text-center">حالة الغياب</th>
+                  <th className="p-3 text-center">إجراءات</th>
                 </tr>
               </thead>
               <tbody>
@@ -229,6 +306,11 @@ export default function Students() {
                       style={{ borderColor: 'var(--border-color)' }}>
                     <td className="p-3" style={{ color: 'var(--text-secondary)' }}>{i + 1}</td>
                     <td className="p-3 font-semibold">{s.full_name}</td>
+                    <td className="p-3 text-center">
+                      <span title={s.gender === 'female' ? 'أنثى' : 'ذكر'} className="text-lg">
+                        {s.gender === 'female' ? '👧' : '👦'}
+                      </span>
+                    </td>
                     <td className="p-3">
                       <span className="badge-info">
                         <GraduationCap size={12} />
@@ -243,21 +325,21 @@ export default function Students() {
                       </span>
                     </td>
                     <td className="p-3 font-semibold text-emerald-600">
-  {(s.total_fees || 0).toLocaleString('ar-IQ')} د.ع
-</td>
-<td className="p-3 text-center">
-  {(() => {
-    const level = s.absence_level || 0
-    if (level === 0) return <span className="badge-success text-xs">✓ نشط</span>
-    if (level === 1) return <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>🔔 إنذار</span>
-    if (level === 2) return <span className="badge" style={{ background: '#FED7AA', color: '#C2410C' }}>⚠️ إنذار 2</span>
-    if (level === 3) return <span className="badge" style={{ background: '#FECACA', color: '#B91C1C' }}>🟠 تعهد</span>
-    if (level === 4) return <span className="badge" style={{ background: '#FCA5A5', color: '#7F1D1D' }}>❌ راسب</span>
-    return <span className="badge-info text-xs">—</span>
-  })()}
-</td>
-<td className="p-3">
-  <div className="flex justify-center gap-1">
+                      {(s.total_fees || 0).toLocaleString('ar-IQ')} د.ع
+                    </td>
+                    <td className="p-3 text-center">
+                      {(() => {
+                        const level = s.absence_level || 0
+                        if (level === 0) return <span className="badge-success text-xs">✓ نشط</span>
+                        if (level === 1) return <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>🔔 إنذار</span>
+                        if (level === 2) return <span className="badge" style={{ background: '#FED7AA', color: '#C2410C' }}>⚠️ إنذار 2</span>
+                        if (level === 3) return <span className="badge" style={{ background: '#FECACA', color: '#B91C1C' }}>🟠 تعهد</span>
+                        if (level === 4) return <span className="badge" style={{ background: '#FCA5A5', color: '#7F1D1D' }}>❌ راسب</span>
+                        return <span className="badge-info text-xs">—</span>
+                      })()}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex justify-center gap-1">
                         {hasPermission('students.edit') && (
                           <button
                             onClick={() => openEditModal(s)}
@@ -286,6 +368,7 @@ export default function Students() {
         )}
       </div>
 
+      {/* Modal: Add/Edit */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
           <div className="glass-card w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6">
@@ -362,15 +445,35 @@ export default function Students() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium block mb-1.5">الجنس</label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    className="input-modern"
-                  >
-                    <option value="male">ذكر</option>
-                    <option value="female">أنثى</option>
-                  </select>
+                  <label className="text-sm font-medium block mb-1.5">
+                    الجنس <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, gender: 'male' })}
+                      className="p-3 rounded-xl border-2 transition-all text-center"
+                      style={{
+                        borderColor: formData.gender === 'male' ? '#3B82F6' : 'var(--border-color)',
+                        background: formData.gender === 'male' ? 'rgba(59,130,246,0.1)' : 'var(--bg-card)',
+                      }}
+                    >
+                      <span className="text-xl">👦</span>
+                      <div className="text-xs font-bold mt-1">ذكر</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, gender: 'female' })}
+                      className="p-3 rounded-xl border-2 transition-all text-center"
+                      style={{
+                        borderColor: formData.gender === 'female' ? '#EC4899' : 'var(--border-color)',
+                        background: formData.gender === 'female' ? 'rgba(236,72,153,0.1)' : 'var(--bg-card)',
+                      }}
+                    >
+                      <span className="text-xl">👧</span>
+                      <div className="text-xs font-bold mt-1">أنثى</div>
+                    </button>
+                  </div>
                 </div>
 
                 <div>
