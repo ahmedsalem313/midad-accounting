@@ -2,7 +2,7 @@ import express from 'express'
 import { getDB } from '../database/db.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { checkPermission } from '../middleware/permissions.js'
-
+import { generateTimetable } from '../services/timetableGenerator.js'
 const router = express.Router()
 router.use(authMiddleware)
 
@@ -131,5 +131,41 @@ router.delete('/class/:grade/:section', checkPermission('timetable.edit'), (req,
 
   res.json({ success: true, message: `تم حذف ${result.changes} حصة` })
 })
+// POST — توليد الجدول تلقائيًا
+router.post('/generate', checkPermission('timetable.edit'), (req, res) => {
+  try {
+    const { grade, section, academic_year } = req.body
+    if (!grade) {
+      return res.status(400).json({ success: false, error: 'يرجى تحديد الصف' })
+    }
 
+    const result = generateTimetable({
+      grade,
+      section: section || null,
+      academicYear: academic_year || '2025-2026',
+    })
+
+    if (result.unassigned.length > 0) {
+      const summary = result.unassigned
+        .slice(0, 5)
+        .map((u) => `${u.subject_name} (${u.teacher_name})`)
+        .join('، ')
+      return res.json({
+        success: true,
+        data: result,
+        message: `تم توزيع ${result.placed} من ${result.total}. لم تُوزّع: ${summary}${result.unassigned.length > 5 ? '...' : ''}`,
+        warning: true,
+      })
+    }
+
+    res.json({
+      success: true,
+      data: result,
+      message: `تم توزيع ${result.placed} حصة بنجاح`,
+    })
+  } catch (error) {
+    console.error('Generate error:', error)
+    res.status(500).json({ success: false, error: error.message || 'فشل التوليد' })
+  }
+})
 export default router

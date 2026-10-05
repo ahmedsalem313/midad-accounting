@@ -1,10 +1,46 @@
+// server/services/pdfGenerator.js
 import PDFDocument from 'pdfkit'
-import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { readFileSync } from 'fs'
+import arabicReshaperPkg from 'arabic-reshaper'
+const arabicReshaper = arabicReshaperPkg.default || arabicReshaperPkg
+import bidiFactory from 'bidi-js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+const bidi = bidiFactory()
+
+// مسار الخط العربي
+const FONT_PATH = path.join(__dirname, '..', 'assets', 'fonts', 'Cairo-Regular.ttf')
+const FONT_BOLD_PATH = FONT_PATH // سنستخدم نفس الخط
+const FONT_NAME = 'Cairo'
+
+// ============================================
+// تحويل النص العربي ليظهر بشكل صحيح في PDF
+// ============================================
+function ar(text) {
+  if (text === null || text === undefined) return ''
+  const str = String(text)
+
+  // إعادة ترتيب الحروف العربية (reshaping)
+  const reshaped = arabicReshaper.reshape(str)
+
+  // إعادة ترتيب الاتجاه (bidi)
+  const bidiText = bidi.getEmbeddingLevels(reshaped, 'rtl')
+  const reordered = bidi.getReorderedString(reshaped, bidiText)
+
+  return reordered
+}
+
+// ============================================
+// تسجيل الخط في PDFKit
+// ============================================
+function registerFonts(doc) {
+  doc.registerFont(FONT_NAME, FONT_PATH)
+  doc.registerFont('Cairo-Bold', FONT_BOLD_PATH)
+}
 
 // ============================================
 // توليد كشف درجات PDF
@@ -21,6 +57,8 @@ export async function generateGradeReport(student, grades, options = {}) {
         },
       })
 
+      registerFonts(doc)
+
       const chunks = []
       doc.on('data', (chunk) => chunks.push(chunk))
       doc.on('end', () => resolve(Buffer.concat(chunks)))
@@ -35,87 +73,115 @@ export async function generateGradeReport(student, grades, options = {}) {
       // شريط علوي ملون
       doc.rect(0, 0, pageWidth, 100).fill('#6366F1')
 
-      // شعار
-      doc.fontSize(36).fillColor('#FFFFFF').text('🖋️', margin, 30)
-
-      // اسم المدرسة
+      // اسم المدرسة (وسط الترويسة)
       doc
+        .font(FONT_NAME)
         .fontSize(22)
         .fillColor('#FFFFFF')
-        .text(options.schoolName || 'مداد المحاسبي', 100, 35)
+        .text(ar(options.schoolName || 'مداد المحاسبي'), 0, 30, {
+          align: 'center',
+          width: pageWidth,
+        })
 
       doc
         .fontSize(11)
         .fillColor('#E0E7FF')
-        .text('نظام إدارة مدرسية متكامل', 100, 65)
+        .text(ar('نظام إدارة مدرسية متكامل'), 0, 62, {
+          align: 'center',
+          width: pageWidth,
+        })
 
-      // التاريخ على اليسار
+      // التاريخ على اليسار (بالإنجليزية)
       doc
+        .font(FONT_NAME)
         .fontSize(10)
         .fillColor('#E0E7FF')
         .text(
-          `التاريخ: ${new Date().toLocaleDateString('en-GB')}`,
-          0,
+          `Date: ${new Date().toLocaleDateString('en-GB')}`,
+          margin,
           45,
-          { align: 'left', width: pageWidth - margin }
+          { align: 'left', width: pageWidth - margin * 2 }
         )
 
       // ============================================
       // العنوان الرئيسي
       // ============================================
       doc
+        .font(FONT_NAME)
         .fontSize(18)
         .fillColor('#4338CA')
-        .text('كشف درجات الطالب', 0, 130, { align: 'center', width: pageWidth })
+        .text(ar('كشف درجات الطالب'), 0, 130, {
+          align: 'center',
+          width: pageWidth,
+        })
 
       // ============================================
       // بيانات الطالب
       // ============================================
-      doc.y = 175
+      const infoY = 175
+      const boxWidth = pageWidth - margin * 2
 
-      // صندوق معلومات الطالب
-      const infoY = doc.y
-      doc.roundedRect(margin, infoY, pageWidth - margin * 2, 80, 8).fill('#EEF2FF')
+      doc.roundedRect(margin, infoY, boxWidth, 90, 8).fill('#EEF2FF')
 
-      doc.fillColor('#4338CA').fontSize(12).text('👤 بيانات الطالب', margin + 15, infoY + 12)
+      // عنوان الصندوق
+      doc
+        .font(FONT_NAME)
+        .fontSize(12)
+        .fillColor('#4338CA')
+        .text(ar('بيانات الطالب'), 0, infoY + 12, {
+          align: 'center',
+          width: pageWidth,
+        })
 
-      doc.fillColor('#475569').fontSize(10)
-      doc.text('الاسم:', margin + 15, infoY + 38)
-      doc.fillColor('#1e293b').fontSize(11).text(student.full_name, margin + 60, infoY + 38)
-
-      doc.fillColor('#475569').fontSize(10)
-      doc.text('الصف:', margin + 15, infoY + 58)
-      doc.fillColor('#1e293b').fontSize(11).text(
-        `${student.grade}${student.section ? ' - شعبة ' + student.section : ''}`,
-        margin + 60,
-        infoY + 58
-      )
+      // الصف الأول: الاسم + ولي الأمر
+      doc.font(FONT_NAME).fontSize(10).fillColor('#475569')
+      doc.text(ar('الاسم:'), margin + 15, infoY + 42)
+      doc.fontSize(11).fillColor('#1e293b')
+      doc.text(ar(student.full_name), margin + 60, infoY + 42, { width: 180 })
 
       if (student.guardian_name) {
-        doc.fillColor('#475569').fontSize(10)
-        doc.text('ولي الأمر:', margin + 250, infoY + 38)
-        doc.fillColor('#1e293b').fontSize(11).text(student.guardian_name, margin + 320, infoY + 38)
+        doc.font(FONT_NAME).fontSize(10).fillColor('#475569')
+        doc.text(ar('ولي الأمر:'), pageWidth / 2 + 20, infoY + 42)
+        doc.fontSize(11).fillColor('#1e293b')
+        doc.text(ar(student.guardian_name), pageWidth / 2 + 85, infoY + 42, { width: 180 })
       }
+
+      // الصف الثاني: الصف + الشعبة
+      doc.font(FONT_NAME).fontSize(10).fillColor('#475569')
+      doc.text(ar('الصف:'), margin + 15, infoY + 65)
+      doc.fontSize(11).fillColor('#1e293b')
+      doc.text(
+        ar(`${student.grade}${student.section ? ' - شعبة ' + student.section : ''}`),
+        margin + 60,
+        infoY + 65,
+        { width: 180 }
+      )
 
       // ============================================
       // جدول الدرجات
       // ============================================
       const tableTop = infoY + 110
       const tableWidth = pageWidth - margin * 2
-      const colWidths = [tableWidth * 0.4, tableWidth * 0.2, tableWidth * 0.2, tableWidth * 0.2]
+      const colWidths = [
+        tableWidth * 0.4,
+        tableWidth * 0.2,
+        tableWidth * 0.2,
+        tableWidth * 0.2,
+      ]
       const headers = ['المادة', 'الدرجة', 'العظمى', 'النسبة']
       const headerY = tableTop
 
       // رأس الجدول
-      let xPos = margin
       doc.rect(margin, headerY, tableWidth, 30).fill('#6366F1')
 
+      let xPos = margin
       headers.forEach((header, i) => {
         doc
+          .font(FONT_NAME)
           .fontSize(12)
           .fillColor('#FFFFFF')
-          .text(header, xPos + 10, headerY + 9, {
-            width: colWidths[i] - 20,
+          .text(ar(header), xPos, headerY + 9, {
+            width: colWidths[i],
             align: 'center',
           })
         xPos += colWidths[i]
@@ -130,61 +196,64 @@ export async function generateGradeReport(student, grades, options = {}) {
         const rowHeight = 28
         const bgColor = index % 2 === 0 ? '#F8FAFC' : '#FFFFFF'
 
-        // خلفية الصف
         doc.rect(margin, rowY, tableWidth, rowHeight).fill(bgColor)
 
-        const percentage = grade.max_score > 0 ? (grade.score / grade.max_score) * 100 : 0
+        const percentage = grade.max_score > 0
+          ? (grade.score / grade.max_score) * 100
+          : 0
         totalScore += grade.score
         totalMax += grade.max_score
 
-        // لون النسبة
         let percentColor = '#EF4444'
         if (percentage >= 90) percentColor = '#10B981'
         else if (percentage >= 75) percentColor = '#3B82F6'
         else if (percentage >= 50) percentColor = '#F59E0B'
 
-        // الحدود
         doc.strokeColor('#E2E8F0').lineWidth(0.5)
         doc.rect(margin, rowY, tableWidth, rowHeight).stroke()
 
         xPos = margin
 
-        // اسم المادة
+        // اسم المادة (يعرض الاسم العربي إن وُجد)
         doc
+          .font(FONT_NAME)
           .fontSize(11)
           .fillColor('#1e293b')
-          .text(grade.subject || grade.subject_name || '-', xPos + 10, rowY + 9, {
-            width: colWidths[0] - 20,
-            align: 'right',
+          .text(ar(grade.subject_name || grade.subject || '-'), xPos, rowY + 9, {
+            width: colWidths[0],
+            align: 'center',
           })
         xPos += colWidths[0]
 
         // الدرجة
         doc
+          .font(FONT_NAME)
           .fontSize(11)
           .fillColor('#1e293b')
-          .text(String(grade.score), xPos + 10, rowY + 9, {
-            width: colWidths[1] - 20,
+          .text(String(grade.score), xPos, rowY + 9, {
+            width: colWidths[1],
             align: 'center',
           })
         xPos += colWidths[1]
 
         // العظمى
         doc
+          .font(FONT_NAME)
           .fontSize(11)
           .fillColor('#64748b')
-          .text(String(grade.max_score), xPos + 10, rowY + 9, {
-            width: colWidths[2] - 20,
+          .text(String(grade.max_score), xPos, rowY + 9, {
+            width: colWidths[2],
             align: 'center',
           })
         xPos += colWidths[2]
 
         // النسبة
         doc
+          .font(FONT_NAME)
           .fontSize(11)
           .fillColor(percentColor)
-          .text(`${percentage.toFixed(1)}%`, xPos + 10, rowY + 9, {
-            width: colWidths[3] - 20,
+          .text(`${percentage.toFixed(1)}%`, xPos, rowY + 9, {
+            width: colWidths[3],
             align: 'center',
           })
 
@@ -196,26 +265,35 @@ export async function generateGradeReport(student, grades, options = {}) {
       // ============================================
       const summaryY = rowY + 15
 
-      // صندوق المجموع
       doc.roundedRect(margin, summaryY, tableWidth, 60, 8).fill('#EEF2FF')
 
       const avg = totalMax > 0 ? (totalScore / totalMax) * 100 : 0
 
-      doc.fillColor('#4338CA').fontSize(11).text('النتيجة الإجمالية', margin + 15, summaryY + 10)
-      doc.fillColor('#1e293b').fontSize(13).text(`${totalScore} / ${totalMax}`, margin + 15, summaryY + 30)
+      // النتيجة الإجمالية
+      doc.font(FONT_NAME).fontSize(11).fillColor('#4338CA')
+      doc.text(ar('النتيجة الإجمالية'), margin + 15, summaryY + 10, { width: 150 })
+      doc.fontSize(13).fillColor('#1e293b')
+      doc.text(`${totalScore} / ${totalMax}`, margin + 15, summaryY + 30, { width: 150 })
 
-      doc.fillColor('#4338CA').fontSize(11).text('المعدل العام', pageWidth - margin - 200, summaryY + 10)
+      // المعدل العام
+      doc.font(FONT_NAME).fontSize(11).fillColor('#4338CA')
+      doc.text(ar('المعدل العام'), pageWidth - margin - 160, summaryY + 10, {
+        width: 150,
+        align: 'right',
+      })
       doc
-        .fillColor(avg >= 50 ? '#10B981' : '#EF4444')
         .fontSize(20)
-        .text(`${avg.toFixed(2)}%`, pageWidth - margin - 200, summaryY + 26)
+        .fillColor(avg >= 50 ? '#10B981' : '#EF4444')
+        .text(`${avg.toFixed(2)}%`, pageWidth - margin - 160, summaryY + 26, {
+          width: 150,
+          align: 'right',
+        })
 
       // ============================================
       // التذييل
       // ============================================
       const footerY = summaryY + 100
 
-      // خط فاصل
       doc
         .strokeColor('#CBD5E1')
         .lineWidth(1)
@@ -225,26 +303,35 @@ export async function generateGradeReport(student, grades, options = {}) {
         .stroke()
         .undash()
 
-      // التوقيعات
-      doc.fillColor('#64748b').fontSize(10)
-      doc.text('توقيع ولي الأمر', margin + 30, footerY + 30)
-      doc.text('ختم المدرسة', pageWidth - margin - 130, footerY + 30)
+      doc.font(FONT_NAME).fillColor('#64748b').fontSize(10)
 
+      // توقيع ولي الأمر (يمين)
+      doc.text(ar('توقيع ولي الأمر'), pageWidth - margin - 150, footerY + 30, {
+        width: 150,
+        align: 'center',
+      })
       doc
-        .moveTo(margin + 30, footerY + 60)
-        .lineTo(margin + 150, footerY + 60)
-        .stroke()
-      doc
-        .moveTo(pageWidth - margin - 130, footerY + 60)
+        .moveTo(pageWidth - margin - 150, footerY + 60)
         .lineTo(pageWidth - margin, footerY + 60)
+        .stroke()
+
+      // ختم المدرسة (يسار)
+      doc.text(ar('ختم المدرسة'), margin, footerY + 30, {
+        width: 150,
+        align: 'center',
+      })
+      doc
+        .moveTo(margin, footerY + 60)
+        .lineTo(margin + 150, footerY + 60)
         .stroke()
 
       // تذييل
       doc
+        .font(FONT_NAME)
         .fillColor('#94A3B8')
         .fontSize(9)
         .text(
-          'هذا الكشف صادر إلكترونياً من مداد المحاسبي — نظام إدارة مدرسية',
+          ar('هذا الكشف صادر إلكترونياً من مداد المحاسبي — نظام إدارة مدرسية'),
           0,
           doc.page.height - 30,
           { align: 'center', width: pageWidth }

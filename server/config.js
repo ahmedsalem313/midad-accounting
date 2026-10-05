@@ -8,8 +8,7 @@ const __dirname = path.dirname(__filename)
 dotenv.config({ path: path.join(__dirname, '.env') })
 
 export const config = {
-  port: parseInt(process.env.PORT) || 3001,
-  nodeEnv: process.env.NODE_ENV || 'development',
+port: parseInt(process.env.PORT) || 3002,  nodeEnv: process.env.NODE_ENV || 'development',
   
   jwt: {
     secret: process.env.JWT_SECRET || 'midad-secret-change-me-in-production',

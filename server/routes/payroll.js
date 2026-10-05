@@ -19,7 +19,6 @@ function calculateSalary(db, teacherId, month, year) {
 
   const salaryType = config?.salary_type || 'fixed'
 
-  // البيانات الأساسية
   const baseSalary = config?.base_salary || 0
   const lessonPrice = config?.lesson_price || 0
   const hourlyRate = config?.hourly_rate || 0
@@ -33,11 +32,9 @@ function calculateSalary(db, teacherId, month, year) {
   const absenceDedPerDay = config?.absence_deduction_per_day || 0
   const lateDedPerMin = config?.late_deduction_per_minute || 0
 
-  // الفترة
   const start = `${year}-${String(month).padStart(2, '0')}-01`
   const end = `${year}-${String(month).padStart(2, '0')}-31`
 
-  // الحضور
   const att = db.prepare(`
     SELECT
       COUNT(CASE WHEN status = 'present' THEN 1 END) as present_days,
@@ -48,14 +45,13 @@ function calculateSalary(db, teacherId, month, year) {
     WHERE teacher_id = ? AND date BETWEEN ? AND ?
   `).get(teacherId, start, end)
 
-  // السلف المعتمدة لهذا الشهر
   const advances = db.prepare(`
     SELECT COALESCE(SUM(amount), 0) as total
     FROM advances
     WHERE teacher_id = ? AND deduction_month = ? AND deduction_year = ?
       AND status = 'approved'
   `).get(teacherId, month, year)
-    // المكافآت (جميعها، بغض النظر عن حالتها)
+
   const rewards = db.prepare(`
     SELECT COALESCE(SUM(amount), 0) as total, COUNT(*) as count
     FROM teacher_rewards
@@ -68,11 +64,10 @@ function calculateSalary(db, teacherId, month, year) {
     WHERE teacher_id = ? AND reward_month = ? AND reward_year = ?
     ORDER BY granted_at
   `).all(teacherId, month, year)
+
   const rewardsTotal = rewards.total
   const rewardsCount = rewards.count
-  // ============================================
-  // حساب حسب النوع
-  // ============================================
+
   let lessonCount = 0
   let lessonAmount = 0
   let hoursCount = 0
@@ -80,16 +75,13 @@ function calculateSalary(db, teacherId, month, year) {
   let commissionAmount = 0
 
   if (salaryType === 'per_lesson' || salaryType === 'mixed') {
-    // عدد الحصص من الجدول (كل أسبوع × عدد الأسابيع في الشهر)
     const timetableCount = db.prepare(`
       SELECT COUNT(*) as c FROM timetable WHERE teacher_id = ?
     `).get(teacherId).c
 
-    // عدد الأسابيع في الشهر (تقريبي = 4.3)
     const weeksInMonth = 4.3
     lessonCount = Math.round(timetableCount * weeksInMonth)
 
-    // خصم أيام الغياب (بمتوسط حصص اليوم)
     const lessonsPerDay = timetableCount > 0
       ? timetableCount / Math.max(1, (att.present_days + att.absent_days))
       : 0
@@ -100,11 +92,9 @@ function calculateSalary(db, teacherId, month, year) {
   }
 
   if (salaryType === 'mixed') {
-    // بالساعة: نستخدم ساعات افتراضية = عدد أيام الحضور × 6 ساعات
     hoursCount = att.present_days * 6
     hourlyAmount = hoursCount * hourlyRate
 
-    // نسبة الإيراد: من إجمالي الأقساط المحصلة في الشهر
     if (commissionRate > 0) {
       const revenue = db.prepare(`
         SELECT COALESCE(SUM(paid_amount), 0) as total
@@ -116,9 +106,6 @@ function calculateSalary(db, teacherId, month, year) {
     }
   }
 
-  // ============================================
-  // الإجمالي
-  // ============================================
   let grossSalary = 0
 
   if (salaryType === 'fixed') {
@@ -129,15 +116,15 @@ function calculateSalary(db, teacherId, month, year) {
     grossSalary = baseSalary + lessonAmount + hourlyAmount + commissionAmount
   }
 
-  // الخصومات
   const absenceDeduction = salaryType === 'fixed'
     ? att.absent_days * absenceDedPerDay
-    : 0  // بالحصة لا يوجد خصم غياب
+    : 0
 
   const lateDeduction = att.late_minutes * lateDedPerMin
   const advancesDeduction = advances.total
-const bonus = rewardsTotal
-  const netSalary = grossSalary + allowances - absenceDeduction - lateDeduction - advancesDeduction
+  const bonus = rewardsTotal
+  const rewardsDataJSON = rewardsList.length > 0 ? JSON.stringify(rewardsList) : null
+  const netSalary = grossSalary + allowances + rewardsTotal - absenceDeduction - lateDeduction - advancesDeduction
 
   return {
     teacher_id: teacher.id,
@@ -157,9 +144,10 @@ const bonus = rewardsTotal
 
     allowances,
     allowances_breakdown: { housing, transport, other },
-       bonus: bonus,
+    bonus: bonus,
     rewards_count: rewardsCount,
     rewards_list: rewardsList,
+    rewards_data: rewardsDataJSON,
 
     attendance_days: att.present_days,
     absence_days: att.absent_days,
@@ -200,6 +188,15 @@ router.get('/', checkPermission('payroll.view'), (req, res) => {
   sql += ' ORDER BY p.year DESC, p.month DESC, u.full_name'
 
   const rows = db.prepare(sql).all(...params)
+
+  for (const row of rows) {
+    try {
+      row.rewards_list = row.rewards_data ? JSON.parse(row.rewards_data) : []
+    } catch {
+      row.rewards_list = []
+    }
+  }
+
   res.json({ success: true, data: rows })
 })
 
@@ -242,7 +239,7 @@ router.post('/generate', checkPermission('payroll.calculate'), (req, res) => {
         base_salary, lesson_count, lesson_price, lesson_amount,
         hourly_rate, hours_count, hourly_amount,
         commission_rate, commission_amount,
-        allowances, bonus,
+        allowances, bonus, rewards_data,
         absence_deduction, late_deduction, advances_deduction,
         other_deductions, manual_adjustment, net_salary,
         attendance_days, absence_days, late_count, late_minutes,
@@ -252,7 +249,7 @@ router.post('/generate', checkPermission('payroll.calculate'), (req, res) => {
         ?, ?, ?, ?,
         ?, ?, ?,
         ?, ?,
-        ?, ?,
+        ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?, ?,
@@ -260,7 +257,7 @@ router.post('/generate', checkPermission('payroll.calculate'), (req, res) => {
       )
     `)
 
-      const tx = db.transaction(() => {
+    const tx = db.transaction(() => {
       for (const t of teachers) {
         const r = calculateSalary(db, t.id, month, year)
         if (!r) continue
@@ -277,14 +274,13 @@ router.post('/generate', checkPermission('payroll.calculate'), (req, res) => {
           r.base_salary, r.lesson_count, r.lesson_price, r.lesson_amount,
           r.hourly_rate, r.hours_count, r.hourly_amount,
           r.commission_rate, r.commission_amount,
-          r.allowances, r.bonus,
+          r.allowances, r.bonus, r.rewards_data,
           r.absence_deduction, r.late_deduction, r.advances_deduction,
           r.other_deductions, r.manual_adjustment, r.net_salary,
           r.attendance_days, r.absence_days, r.late_count, r.late_minutes,
           req.user.id
         )
 
-        // ⚠️ علّم المكافآت كمصروفة عند إضافتها للكشف
         db.prepare(`
           UPDATE teacher_rewards
           SET paid = 1, paid_at = CURRENT_TIMESTAMP, status = 'paid'
@@ -325,7 +321,6 @@ router.put('/:id', checkPermission('payroll.calculate'), (req, res) => {
     const newHourlyAmount = record.hours_count * newHourlyRate
     const newCommissionRate = commission_rate !== undefined ? commission_rate : record.commission_rate
 
-    // إعادة حساب النسبة (نحتاج نعرف الإيراد الأصلي)
     let newCommissionAmount = record.commission_amount
     if (commission_rate !== undefined && record.commission_rate > 0 && record.commission_amount > 0) {
       newCommissionAmount = Math.round((record.commission_amount / record.commission_rate) * newCommissionRate)
@@ -414,6 +409,14 @@ router.get('/teacher/:id', (req, res) => {
     WHERE teacher_id = ?
     ORDER BY year DESC, month DESC
   `).all(teacherId)
+
+  for (const row of records) {
+    try {
+      row.rewards_list = row.rewards_data ? JSON.parse(row.rewards_data) : []
+    } catch {
+      row.rewards_list = []
+    }
+  }
 
   res.json({ success: true, data: records })
 })

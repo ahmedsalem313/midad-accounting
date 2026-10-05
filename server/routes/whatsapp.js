@@ -8,9 +8,8 @@ import {
   sendPDF,
   logout as waLogout,
   isReady,
+  reconnect,
 } from '../services/whatsapp.js'
-import { generateGradeReport } from '../services/pdfGenerator.js'
-
 const router = express.Router()
 
 // ============================================
@@ -28,6 +27,18 @@ router.use(authMiddleware)
 // ============================================
 // POST - قطع الاتصال
 // ============================================
+// ============================================
+// POST - إعادة الاتصال
+// ============================================
+router.post('/reconnect', async (req, res) => {
+  try {
+    const result = await reconnect()
+    res.json({ success: true, data: result })
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
 router.post('/logout', async (req, res) => {
   try {
     const result = await waLogout()

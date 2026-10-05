@@ -5,6 +5,7 @@ import {
 import toast from 'react-hot-toast'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
+import { Sparkles } from 'lucide-react'
 import {
   getGradesByType, SECTIONS, getCurrentSchoolType,
   getSubjectsForGrade, getSubjectByCode,
@@ -156,7 +157,20 @@ export default function Timetable() {
       toast.error('فشل الحذف')
     }
   }
+const handleGenerate = async () => {
+  if (!confirm(`🤖 سيتم توليد الجدول تلقائيًا لصف "${selectedGrade} - شعبة ${selectedSection}".\n\nسيُستبدل الجدول الحالي. متابعة؟`)) return
 
+  try {
+    const res = await api.post('/timetable/generate', {
+      grade: selectedGrade,
+      section: selectedSection,
+    })
+    toast.success(res.data.message)
+    fetchTimetable()
+  } catch (e) {
+    toast.error(e.response?.data?.error || 'فشل التوليد')
+  }
+}
   const handleClearAll = async () => {
     if (!confirm(`حذف الجدول كاملاً لصف ${selectedGrade} شعبة ${selectedSection}؟`)) return
     try {
@@ -188,13 +202,22 @@ export default function Timetable() {
           </p>
         </div>
 
-        {hasPermission('timetable.edit') && timetable.length > 0 && (
-          <button onClick={handleClearAll} className="btn-ghost text-red-500 border-2"
-                  style={{ borderColor: 'rgba(239,68,68,0.3)' }}>
-            <Trash2 size={18} />
-            حذف الجدول
-          </button>
-        )}
+       {hasPermission('timetable.edit') && (
+  <div className="flex gap-2 flex-wrap">
+    <button onClick={handleGenerate}
+            className="btn-primary flex items-center gap-2">
+      <Sparkles size={18} />
+      توليد تلقائي
+    </button>
+    {timetable.length > 0 && (
+      <button onClick={handleClearAll} className="btn-ghost text-red-500 border-2"
+              style={{ borderColor: 'rgba(239,68,68,0.3)' }}>
+        <Trash2 size={18} />
+        حذف الجدول
+      </button>
+    )}
+  </div>
+)}
       </div>
 
       {/* Filter */}

@@ -2,6 +2,7 @@ import pkg from 'whatsapp-web.js'
 const { Client, LocalAuth, MessageMedia } = pkg
 import qrcode from 'qrcode-terminal'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -10,11 +11,38 @@ const __dirname = path.dirname(__filename)
 // مسار Chrome على Mac
 const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 
+// مسار الجلسة
+const SESSION_PATH = path.join(__dirname, '..', 'database', 'whatsapp-session')
+const SESSION_DIR = path.join(SESSION_PATH, 'session')
+
 let client = null
 let ioInstance = null
-let currentStatus = 'disconnected'   // disconnected | qr | connecting | ready
+let currentStatus = 'disconnected'   // disconnected | qr | connecting | ready | error
 let currentQR = null
 let currentInfo = null
+
+// ============================================
+// تنظيف ملفات القفل القديمة قبل التشغيل
+// ============================================
+function cleanLockFiles() {
+  const lockFiles = [
+    'SingletonLock',
+    'SingletonCookie',
+    'SingletonSocket',
+    'lockfile',
+  ]
+  for (const f of lockFiles) {
+    const p = path.join(SESSION_DIR, f)
+    try {
+      if (fs.existsSync(p)) {
+        fs.rmSync(p, { force: true })
+        console.log(`🧹 حذف ملف قفل: ${f}`)
+      }
+    } catch (e) {
+      // تجاهل
+    }
+  }
+}
 
 // ============================================
 // تهيئة عميل الواتساب
@@ -22,9 +50,12 @@ let currentInfo = null
 export function initWhatsApp(io) {
   ioInstance = io
 
+  // احذف ملفات القفل
+  cleanLockFiles()
+
   client = new Client({
     authStrategy: new LocalAuth({
-      dataPath: path.join(__dirname, '..', 'database', 'whatsapp-session'),
+      dataPath: SESSION_PATH,
     }),
     puppeteer: {
       headless: true,
@@ -37,15 +68,25 @@ export function initWhatsApp(io) {
         '--no-first-run',
         '--no-zygote',
         '--disable-gpu',
+        '--disable-features=site-per-process',
       ],
     },
+    // سرعة أعلى
+    qrMaxRetries: 10,
+    authTimeoutMs: 60000,
+    takeoverOnConflict: true,
+    takeoverTimeoutMs: 0,
   })
 
   client.on('qr', (qr) => {
     currentStatus = 'qr'
     currentQR = qr
     console.log('📱 امسح رمز QR من هاتفك:')
-    qrcode.generate(qr, { small: true })
+    try {
+      qrcode.generate(qr, { small: true })
+    } catch (e) {
+      // تجاهل أخطاء عرض QR في الطرفية
+    }
     if (ioInstance) ioInstance.emit('whatsapp:qr', qr)
   })
 
@@ -54,6 +95,8 @@ export function initWhatsApp(io) {
     currentQR = null
     currentInfo = client.info
     console.log('✅ WhatsApp جاهز!')
+    console.log('   الرقم:', client.info?.wid?.user)
+    console.log('   الاسم:', client.info?.pushname)
     if (ioInstance) ioInstance.emit('whatsapp:ready', {
       number: client.info?.wid?.user,
       name: client.info?.pushname,
@@ -67,51 +110,54 @@ export function initWhatsApp(io) {
   })
 
   client.on('auth_failure', (msg) => {
-    currentStatus = 'disconnected'
+    currentStatus = 'error'
+    currentQR = null
     console.error('❌ فشل التوثيق:', msg)
     if (ioInstance) ioInstance.emit('whatsapp:auth_failure', msg)
   })
 
-  client.on('disconnected', (reason) => {
+  client.on('disconnected', async (reason) => {
     currentStatus = 'disconnected'
     currentInfo = null
+    currentQR = null
     console.error('❌ انقطع الاتصال:', reason)
     if (ioInstance) ioInstance.emit('whatsapp:disconnected', reason)
+
+    // حاول إعادة التهيئة بعد 5 ثواني
+    setTimeout(() => {
+      if (currentStatus === 'disconnected') {
+        console.log('🔄 محاولة إعادة الاتصال...')
+        initWhatsApp(ioInstance)
+      }
+    }, 5000)
   })
 
+  client.on('loading_screen', (percent, message) => {
+    console.log(`⏳ ${message || 'جاري التحميل'}: ${percent}%`)
+  })
+
+  // ابدأ التهيئة
+  console.log('🔄 بدء تهيئة WhatsApp...')
   client.initialize().catch((err) => {
     console.error('❌ فشل التهيئة:', err.message)
     currentStatus = 'error'
+    if (ioInstance) ioInstance.emit('whatsapp:error', err.message)
   })
 
   return client
 }
 
 // ============================================
-// جلب الحالة
-// ============================================
-export function getStatus() {
-  return {
-    status: currentStatus,
-    qr: currentQR,
-    info: currentInfo ? {
-      number: currentInfo?.wid?.user,
-      name: currentInfo?.pushname,
-    } : null,
-  }
-}
-
-// ============================================
 // تنظيف رقم الهاتف
 // ============================================
 function cleanPhoneNumber(phone) {
-  let cleanPhone = phone.replace(/[^\d]/g, '')
-  if (cleanPhone.startsWith('0')) {
-    cleanPhone = '964' + cleanPhone.substring(1)
-  } else if (!cleanPhone.startsWith('964')) {
-    cleanPhone = '964' + cleanPhone
-  }
-  return cleanPhone
+  if (!phone) return ''
+  let clean = String(phone).replace(/[^\d]/g, '')
+  // إن بدأ بـ 00 → احذفه
+  if (clean.startsWith('00')) clean = clean.substring(2)
+  // إن بدأ بـ 0 (عراقي محلي) → استبدله بـ 964
+  if (clean.startsWith('0')) clean = '964' + clean.substring(1)
+  return clean
 }
 
 // ============================================
@@ -123,28 +169,20 @@ export async function sendMessage(phone, message) {
   }
 
   const cleanPhone = cleanPhoneNumber(phone)
+  if (!cleanPhone) throw new Error('رقم الهاتف غير صالح')
+
   const chatId = `${cleanPhone}@c.us`
 
   try {
     const result = await client.sendMessage(chatId, message)
-    return {
-      success: true,
-      messageId: result?.id?._serialized || result?.id?.id || 'sent-' + Date.now(),
-    }
+    return { success: true, messageId: result?.id?._serialized }
   } catch (error) {
-  console.error('❌ ❌ ❌ خطأ في إرسال PDF ❌ ❌ ❌')
-  console.error('Message:', error.message)
-  console.error('Name:', error.name)
-  console.error('Full error:', error)
-  console.error('Stack:', error.stack)
-  console.error('Stringified:', JSON.stringify(error, Object.getOwnPropertyNames(error)))
-  console.error('❌ ❌ ❌ نهاية الخطأ ❌ ❌ ❌')
-  throw new Error('فشل إرسال الملف: ' + (error.message || String(error)))
-}
+    throw new Error('فشل إرسال الرسالة: ' + (error.message || String(error)))
+  }
 }
 
 // ============================================
-// إرسال ملف PDF عبر واتساب
+// إرسال ملف PDF
 // ============================================
 export async function sendPDF(phone, pdfBuffer, filename, caption = '') {
   if (!client || currentStatus !== 'ready') {
@@ -152,6 +190,8 @@ export async function sendPDF(phone, pdfBuffer, filename, caption = '') {
   }
 
   const cleanPhone = cleanPhoneNumber(phone)
+  if (!cleanPhone) throw new Error('رقم الهاتف غير صالح')
+
   const chatId = `${cleanPhone}@c.us`
 
   try {
@@ -166,26 +206,23 @@ export async function sendPDF(phone, pdfBuffer, filename, caption = '') {
       chatId,
       filename: safeFilename,
       size: pdfBuffer.length,
-      base64Length: base64Data.length,
     })
 
-    // إنشاء MessageMedia — بدون باراميتر رابع
     const media = new MessageMedia(
       'application/pdf',
       base64Data,
       safeFilename
     )
 
-    console.log('📎 MessageMedia created:', {
-      mimetype: media.mimetype,
-      filename: media.filename,
-      dataLength: media.data ? media.data.length : 0,
-    })
-
-    // إرسال بدون sendMediaAsDocument (افتراضي = document)
     const result = await client.sendMessage(chatId, media, {
       caption: caption || '',
+      sendMediaAsDocument: true,
     })
+
+    // ✅ إصلاح خطأ whatsapp-web.js
+    if (media && media.__x_id) {
+      delete media.__x_id
+    }
 
     console.log('✅ PDF تم إرساله بنجاح')
 
@@ -197,6 +234,26 @@ export async function sendPDF(phone, pdfBuffer, filename, caption = '') {
     console.error('❌ خطأ في إرسال PDF:', error.message)
     throw new Error('فشل إرسال الملف: ' + (error.message || String(error)))
   }
+}
+
+// ============================================
+// إعادة الاتصال يدويًا
+// ============================================
+export async function reconnect() {
+  if (client) {
+    try {
+      await client.destroy()
+    } catch (e) {}
+    client = null
+  }
+  currentStatus = 'disconnected'
+  currentQR = null
+  currentInfo = null
+
+  if (ioInstance) {
+    initWhatsApp(ioInstance)
+  }
+  return { success: true }
 }
 
 // ============================================
@@ -220,6 +277,17 @@ export async function logout() {
 // ============================================
 // حالة الاتصال
 // ============================================
+export function getStatus() {
+  return {
+    status: currentStatus,
+    qr: currentQR,
+    info: currentInfo ? {
+      number: currentInfo.wid?.user,
+      name: currentInfo.pushname,
+    } : null,
+  }
+}
+
 export function isReady() {
   return currentStatus === 'ready'
 }

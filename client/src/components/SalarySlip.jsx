@@ -84,12 +84,33 @@ export default function SalarySlip({ record, onClose, inline = false }) {
               <td style={{ padding: '6px 12px', color: '#64748b' }}>البدلات</td>
               <td style={{ padding: '6px 12px', color: '#1e293b' }}>{fmt(record.allowances)}</td>
             </tr>
-            <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-              <td style={{ padding: '6px 12px', color: '#64748b' }}>🎁 المكافآت</td>
-              <td style={{ padding: '6px 12px', color: '#7c3aed', fontWeight: 'bold' }}>
-                {record.bonus > 0 ? `+${fmt(record.bonus)}` : '—'}
-              </td>
-            </tr>
+           <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+  <td style={{ padding: '6px 12px', color: '#64748b', verticalAlign: 'top' }}>
+    🎁 المكافآت {record.rewards_count > 0 && `(${record.rewards_count})`}
+  </td>
+  <td style={{ padding: '6px 12px', color: '#7c3aed', fontWeight: 'bold' }}>
+    {record.bonus > 0 ? (
+      <div>
+        {record.rewards_list && record.rewards_list.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {record.rewards_list.map((r, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontWeight: 'normal', fontSize: '10px' }}>
+                <span style={{ color: '#64748b' }}>• {r.title}</span>
+                <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>+{fmt(r.amount)}</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px', marginTop: '4px', borderTop: '1px dashed #cbd5e1' }}>
+              <span style={{ color: '#1e293b', fontWeight: 'bold' }}>المجموع</span>
+              <span style={{ color: '#7c3aed', fontWeight: 'bold' }}>+{fmt(record.bonus)}</span>
+            </div>
+          </div>
+        ) : (
+          <span>+{fmt(record.bonus)}</span>
+        )}
+      </div>
+    ) : '—'}
+  </td>
+</tr>
             <tr>
               <td style={{ padding: '6px 12px', color: '#64748b' }}>⚖️ تعديل يدوي</td>
               <td style={{ padding: '6px 12px', color: record.manual_adjustment >= 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
