@@ -159,6 +159,54 @@ router.delete('/:id', checkPermission('partners.edit'), (req, res) => {
     res.status(500).json({ success: false, error: error.message })
   }
 })
+// ============================================
+// GET /api/partners/me — بيانات الشريك الحالي
+// ============================================
+router.get('/me', (req, res) => {
+  try {
+    const db = getDB()
+    const userId = req.user.id
+
+    const partner = db.prepare('SELECT * FROM partners WHERE user_id = ?').get(userId)
+    if (!partner) {
+      return res.status(404).json({ success: false, error: 'حسابك غير مرتبط بشريك' })
+    }
+
+    const capital = db.prepare(`
+      SELECT
+        COALESCE(SUM(CASE WHEN type = 'deposit' THEN amount ELSE 0 END), 0) as deposits,
+        COALESCE(SUM(CASE WHEN type = 'withdrawal' THEN amount ELSE 0 END), 0) as withdrawals
+      FROM partner_capital WHERE partner_id = ?
+    `).get(partner.id)
+
+    const distributions = db.prepare(`
+      SELECT * FROM partner_distributions
+      WHERE partner_id = ?
+      ORDER BY year DESC, month DESC
+    `).all(partner.id)
+
+    const totalEarned = distributions.reduce((s, d) => s + d.partner_share, 0)
+    const totalPaid = distributions.filter((d) => d.status === 'paid').reduce((s, d) => s + d.partner_share, 0)
+    const pending = distributions.filter((d) => d.status === 'pending').reduce((s, d) => s + d.partner_share, 0)
+
+    res.json({
+      success: true,
+      data: {
+        partner,
+        capital: {
+          deposits: capital.deposits,
+          withdrawals: capital.withdrawals,
+          balance: capital.deposits - capital.withdrawals,
+        },
+        distributions,
+        totals: { totalEarned, totalPaid, pending },
+      },
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
 
 // ============================================
 // GET /api/partners/summary — ملخص الحصص

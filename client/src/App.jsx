@@ -43,6 +43,7 @@ import Partners from './pages/Partners'
 import PartnerProfits from './pages/PartnerProfits'
 import PartnerCapital from './pages/PartnerCapital'
 import PartnerReport from './pages/PartnerReport'
+import PartnerDashboard from './pages/PartnerDashboard'
 // ============================================
 // Protected Route للأدمن والمستخدمين
 // ============================================
@@ -87,7 +88,7 @@ export default function App() {
   const path = location.pathname
 
   // ============================================
-  // 1) مسارات ولي الأمر — قبل أي شيء آخر
+  // 1) مسارات ولي الأمر
   // ============================================
   if (path === '/parent-login') {
     return <ParentLogin />
@@ -95,6 +96,13 @@ export default function App() {
 
   if (path.startsWith('/parent')) {
     return <ParentDashboard />
+  }
+
+  // ============================================
+  // 2) الشريك — له لوحة خاصة
+  // ============================================
+  if (user?.role === 'partner') {
+    return <PartnerDashboard />
   }
 
   // ============================================
