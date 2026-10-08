@@ -212,12 +212,11 @@ const fetchStats = async () => {
       ============================================ */}
       <div className="p-4 flex items-center gap-3 border-b flex-shrink-0"
            style={{ borderColor: 'var(--border-color)' }}>
-        <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
-        >
-          🖋️
-        </div>
+        <img
+  src="/logo.png"
+  alt="مداد"
+  className="w-11 h-11 rounded-xl object-contain flex-shrink-0"
+/>
         {open && (
           <div className="animate-fade-in overflow-hidden">
             <h1 className="font-bold text-base leading-tight">

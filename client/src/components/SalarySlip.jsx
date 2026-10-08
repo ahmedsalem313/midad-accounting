@@ -30,9 +30,15 @@ export default function SalarySlip({ record, onClose, inline = false }) {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px', borderBottom: '3px double #6366F1', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '46px', height: '46px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '24px', background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
-            🖋️
-          </div>
+          <img
+  src="/logo.png"
+  alt="مداد"
+  style={{
+    width: '60px',
+    height: '60px',
+    objectFit: 'contain',
+  }}
+/>
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0, color: '#1e293b' }}>مداد المحاسبي</h1>
             <p style={{ fontSize: '10px', color: '#64748b', margin: 0 }}>نظام إدارة مدرسية متكامل</p>
