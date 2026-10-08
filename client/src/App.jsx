@@ -42,7 +42,7 @@ import BrandingSettings from './pages/BrandingSettings'
 import Partners from './pages/Partners'
 import PartnerProfits from './pages/PartnerProfits'
 import PartnerCapital from './pages/PartnerCapital'
-
+import PartnerReport from './pages/PartnerReport'
 // ============================================
 // Protected Route للأدمن والمستخدمين
 // ============================================
@@ -146,6 +146,7 @@ export default function App() {
         <Route path="salary-config" element={<ProtectedRoute permission="payroll.calculate"><SalaryConfig /></ProtectedRoute>} />
         <Route path="advances" element={<ProtectedRoute permission="advances.view"><Advances /></ProtectedRoute>} />
         <Route path="partners/:partnerId/capital" element={<ProtectedRoute permission="partners.view"><PartnerCapital /></ProtectedRoute>} />
+        <Route path="partners/:partnerId/report" element={<ProtectedRoute permission="partners.view"><PartnerReport /></ProtectedRoute>} />
         {/* الأكاديمي */}
         <Route path="grades" element={<ProtectedRoute permission="grades.view"><Grades /></ProtectedRoute>} />
         <Route path="assignments" element={<ProtectedRoute permission="assignments.view"><Assignments /></ProtectedRoute>} />

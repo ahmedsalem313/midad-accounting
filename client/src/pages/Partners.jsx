@@ -3,12 +3,14 @@ import {
   Users, Plus, Edit, Trash2, X, Save, TrendingUp,
   DollarSign, Percent, AlertCircle, Briefcase, Eye, Wallet
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
 export default function Partners() {
   const { hasPermission } = useAuth()
+  const navigate = useNavigate()
   const [partners, setPartners] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -288,6 +290,11 @@ export default function Partners() {
                       </td>
                       <td className="p-3">
                         <div className="flex justify-center gap-1">
+                                                  <button onClick={() => navigate(`/partners/${p.id}/report`)}
+                                className="btn-ghost !p-2 text-emerald-500"
+                                title="التقرير">
+                          <Eye size={16} />
+                        </button>
                           {hasPermission('partners.edit') && (
                             <>
                               <button onClick={() => openEdit(p)}
