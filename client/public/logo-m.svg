@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1" />
+      <stop offset="100%" style="stop-color:#8B5CF6" />
+    </linearGradient>
+    <linearGradient id="grad2b" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FCD34D" />
+      <stop offset="100%" style="stop-color:#F59E0B" />
+    </linearGradient>
+  </defs>
+  
+  <!-- الخلفية دائرية -->
+  <circle cx="100" cy="100" r="90" fill="url(#grad2)"/>
+  
+  <!-- حرف م -->
+  <g transform="translate(100, 100)">
+    <!-- الحلقة -->
+    <circle cx="0" cy="0" r="45" fill="none" stroke="#FFFFFF" stroke-width="6" opacity="0.3"/>
+    
+    <!-- م بأسلوب القلم -->
+    <path d="M -35,-20 Q -35,25 -10,25 Q 5,25 5,0 L 5,-25" 
+          stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <path d="M 5,0 Q 5,-25 25,-25 Q 40,-25 40,0 L 40,-20" 
+          stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" fill="none"/>
+    
+    <!-- رأس القلم على النهاية -->
+    <path d="M 40,-20 L 46,-30 L 34,-30 Z" fill="url(#grad2b)"/>
+  </g>
+  
+  <!-- نجمة صغيرة -->
+  <path d="M 150,50 L 152,56 L 158,56 L 153,60 L 155,66 L 150,62 L 145,66 L 147,60 L 142,56 L 148,56 Z" 
+        fill="#FCD34D"/>
+</svg>

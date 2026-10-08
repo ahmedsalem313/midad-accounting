@@ -38,13 +38,15 @@ import TimetableSettings from './pages/TimetableSettings'
 import TimetableSubjects from './pages/TimetableSubjects'
 import StudentProfile from './pages/StudentProfile'
 import Promotions from './pages/Promotions'
+import BrandingSettings from './pages/BrandingSettings'
+import Partners from './pages/Partners'
+import PartnerProfits from './pages/PartnerProfits'
 // ============================================
 // Protected Route للأدمن والمستخدمين
 // ============================================
 function ProtectedRoute({ children, permission }) {
   const { user, hasPermission, loading } = useAuth()
 
-  // ✅ الـ hooks يجب أن تكون هنا (في أعلى المكوّن)
   useEffect(() => {
     const token = localStorage.getItem('midad_token')
     if (token) connectSocket(token)
@@ -80,15 +82,22 @@ function ProtectedRoute({ children, permission }) {
 export default function App() {
   const { user, loading } = useAuth()
   const location = useLocation()
-
   const path = location.pathname
-  const isParentRoute = path.startsWith('/parent')
 
-  if (isParentRoute) {
-    if (path === '/parent-login') return <ParentLogin />
+  // ============================================
+  // 1) مسارات ولي الأمر — قبل أي شيء آخر
+  // ============================================
+  if (path === '/parent-login') {
+    return <ParentLogin />
+  }
+
+  if (path.startsWith('/parent')) {
     return <ParentDashboard />
   }
 
+  // ============================================
+  // 2) مؤشر التحميل للإدارة
+  // ============================================
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -97,14 +106,18 @@ export default function App() {
     )
   }
 
+  // ============================================
+  // 3) مسارات الإدارة
+  // ============================================
   return (
     <Routes>
-      {/* ============ مسارات عامة ============ */}
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
-      <Route path="/parent-login" element={<ParentLogin />} />
-      <Route path="/parent" element={<ParentDashboard />} />
+      {/* مسارات عامة */}
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/" replace /> : <Login />}
+      />
 
-      {/* ============ مسارات محمية ============ */}
+      {/* مسارات محمية */}
       <Route
         path="/"
         element={
@@ -124,7 +137,6 @@ export default function App() {
         <Route path="students/:studentId/communications" element={<ProtectedRoute permission="communications.view"><Communications /></ProtectedRoute>} />
         <Route path="students/:studentId/absences" element={<ProtectedRoute permission="attendance.view"><StudentAbsenceManagement /></ProtectedRoute>} />
         <Route path="top-students" element={<ProtectedRoute permission="students.view"><TopStudents /></ProtectedRoute>} />
-
         {/* المالية */}
         <Route path="payments" element={<ProtectedRoute permission="payments.view"><Payments /></ProtectedRoute>} />
         <Route path="expenses" element={<ProtectedRoute permission="expenses.view"><Expenses /></ProtectedRoute>} />
@@ -158,10 +170,13 @@ export default function App() {
         <Route path="users" element={<ProtectedRoute permission="users.view"><Users /></ProtectedRoute>} />
         <Route path="permissions" element={<ProtectedRoute permission="users.permissions"><Permissions /></ProtectedRoute>} />
         <Route path="settings" element={<ProtectedRoute permission="settings.view"><Settings /></ProtectedRoute>} />
+        <Route path="branding" element={<ProtectedRoute permission="settings.view"><BrandingSettings /></ProtectedRoute>} />
+        <Route path="partners" element={<ProtectedRoute permission="partners.view"><Partners /></ProtectedRoute>} />
+        <Route path="partner-profits" element={<ProtectedRoute permission="partners.view"><PartnerProfits /></ProtectedRoute>} />
         <Route path="rewards" element={<ProtectedRoute permission="rewards.view"><Rewards /></ProtectedRoute>} />
       </Route>
 
-      {/* ============ صفحة 404 ============ */}
+      {/* صفحة 404 */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

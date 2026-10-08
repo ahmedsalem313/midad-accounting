@@ -5,7 +5,9 @@ import {
   Calendar, CheckSquare, Banknote, HandCoins,
   MessageCircle, BarChart3, UserCog, Shield, Settings as SettingsIcon,
   Award, AlertTriangle, BookOpen, Trophy, MessageSquare, Phone, Gift, QrCode,
-  ChevronDown, Search, X, TrendingUp, Bell
+  ChevronDown, Search, X, TrendingUp, Bell,  Briefcase,
+
+  Palette
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
@@ -77,6 +79,8 @@ const MENU_GROUPS = [
       { path: '/payroll',       label: 'الرواتب',            icon: Banknote,   perm: 'payroll.view' },
       { path: '/salary-config', label: 'إعدادات الرواتب',    icon: SettingsIcon, perm: 'payroll.calculate' },
       { path: '/rewards',       label: 'المكافآت',           icon: Gift,       perm: 'rewards.view' },
+      { path: '/partners',      label: 'الشركاء',            icon: Briefcase,  perm: 'partners.view' },
+      { path: '/partner-profits', label: 'الأرباح والتوزيع', icon: TrendingUp, perm: 'partners.view' },
       { path: '/advances',      label: 'السلف',              icon: HandCoins,  perm: 'advances.view' },
     ],
   },
@@ -113,6 +117,7 @@ const MENU_GROUPS = [
       { path: '/permissions', label: 'الصلاحيات',   icon: Shield,       perm: 'users.permissions' },
       { path: '/qr-codes',    label: 'رموز QR',     icon: QrCode,       perm: 'settings.view' },
       { path: '/settings',    label: 'الإعدادات',   icon: SettingsIcon, perm: 'settings.view' },
+      { path: '/branding',    label: 'الهوية البصرية', icon: Palette,  perm: 'settings.view' },
     ],
   },
 ]

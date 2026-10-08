@@ -44,6 +44,8 @@ const __filename = fileURLToPath(import.meta.url)
 import promotionsRoutes from './routes/promotions.js'
 const __dirname = path.dirname(__filename)
 import seedRoutes from './routes/seed.js'
+import brandingRoutes from './routes/branding.js'
+import partnersRoutes from './routes/partners.js'
 // ============ الإعداد الأساسي ============
 const app = express()
 const httpServer = createServer(app)
@@ -59,6 +61,8 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 app.use('/api/promotions', promotionsRoutes)
 app.use('/api/seed', seedRoutes)
+app.use('/api/branding', brandingRoutes)
+app.use('/api/partners', partnersRoutes)
 // الملفات المرفوعة
 app.use('/uploads', express.static(config.uploads.path))
 

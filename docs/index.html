@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>دليل المستخدم - مداد المحاسبي</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+
+    <!-- الترويسة -->
+    <div class="header">
+      <div class="logo">🖋️</div>
+      <h1>مداد المحاسبي</h1>
+      <p class="subtitle">دليل المستخدم الشامل — نظام إدارة مدرسية متكامل</p>
+      
+      <div class="developer-info">
+        <div class="dev-item">
+          <span>👨‍💻</span>
+          <strong>المطوّر:</strong>
+          <span>أحمد سالم</span>
+        </div>
+        <div class="dev-item">
+          <span>📞</span>
+          <strong>للتواصل:</strong>
+          <a href="tel:+9647707301029" dir="ltr">+964 782 108 8855</a>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-print" onclick="window.print()">
+          🖨️ طباعة / حفظ PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- فهرس -->
+    <div class="toc">
+      <h2>📖 المحتويات</h2>
+      <ol>
+        <li><a href="#intro">1. مقدمة</a></li>
+        <li><a href="#login">2. تسجيل الدخول</a></li>
+        <li><a href="#dashboard">3. لوحة التحكم</a></li>
+        <li><a href="#students">4. إدارة الطلاب</a></li>
+        <li><a href="#student-profile">5. الملف الأكاديمي للطالب</a></li>
+        <li><a href="#payments">6. الأقساط والمدفوعات</a></li>
+        <li><a href="#expenses">7. المصاريف</a></li>
+        <li><a href="#payroll">8. الرواتب</a></li>
+        <li><a href="#rewards">9. المكافآت</a></li>
+        <li><a href="#advances">10. السلف</a></li>
+        <li><a href="#attendance">11. الحضور</a></li>
+        <li><a href="#grades">12. الدرجات</a></li>
+        <li><a href="#timetable">13. الجدول الدراسي</a></li>
+        <li><a href="#calendar">14. التقويم الأكاديمي</a></li>
+        <li><a href="#reports">15. التقارير</a></li>
+        <li><a href="#promotion">16. الترحيل السنوي</a></li>
+        <li><a href="#whatsapp">17. التواصل والواتساب</a></li>
+        <li><a href="#settings">18. الإعدادات</a></li>
+        <li><a href="#branding">19. الهوية البصرية</a></li>
+        <li><a href="#users">20. المستخدمون والصلاحيات</a></li>
+        <li><a href="#parent">21. بوابة ولي الأمر</a></li>
+        <li><a href="#troubleshooting">22. حل المشاكل</a></li>
+      </ol>
+    </div>
+
+    <!-- الفصل 1: مقدمة -->
+    <div class="section" id="intro">
+      <h2>1️⃣ مقدمة</h2>
+
+      <p>
+        <strong>مداد المحاسبي</strong> نظام متكامل لإدارة المدارس، يشمل:
+      </p>
+
+      <ul>
+        <li>✅ إدارة الطلاب والمعلومات الشخصية.</li>
+        <li>✅ تسجيل الأقساط والمدفوعات وطباعة الإيصالات.</li>
+        <li>✅ إدارة المصاريف والرواتب والمكافآت.</li>
+        <li>✅ متابعة الحضور والغياب والسلوك.</li>
+        <li>✅ إدخال الدرجات وحساب المعدلات.</li>
+        <li>✅ توليد الجدول الدراسي تلقائيًا.</li>
+        <li>✅ تقارير مالية وأكاديمية شاملة.</li>
+        <li>✅ بوابة إلكترونية لأولياء الأمور.</li>
+      </ul>
+
+      <div class="info-box">
+        <strong>💡 المتطلبات:</strong>
+        <ul style="margin-top: 8px;">
+          <li>متصفح حديث (Chrome، Safari، Edge).</li>
+          <li>اتصال بالإنترنت (أو الشبكة المحلية للمدرسة).</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- الفصل 2: تسجيل الدخول -->
+    <div class="section" id="login">
+      <h2>2️⃣ تسجيل الدخول</h2>
+
+      <h3>للإدارة والمعلمين</h3>
+
+      <ol class="steps">
+        <li>
+          <strong>افتح المتصفح</strong> واكتب عنوان النظام
+          (مثلاً: <code>http://localhost:5173</code>).
+        </li>
+        <li>
+          <strong>أدخل اسم المستخدم</strong> الذي أعطاك إياه المدير.
+        </li>
+        <li>
+          <strong>أدخل كلمة المرور</strong>.
+        </li>
+        <li>
+          <strong>اضغط "تسجيل الدخول"</strong>.
+        </li>
+      </ol>
+
+      <div class="warning-box">
+        <strong>⚠️ لأول مرة فقط:</strong>
+        بيانات الدخول الافتراضية:<br>
+        <strong>اسم المستخدم:</strong> <code>admin</code><br>
+        <strong>كلمة المرور:</strong> <code>admin123</code><br>
+        <strong>غيّرها فورًا</strong> بعد أول دخول.
+      </div>
+
+      <h3>لأولياء الأمور</h3>
+
+      <ol class="steps">
+        <li>
+          <strong>افتح</strong>: <code>/parent-login</code>.
+        </li>
+        <li>
+          <strong>أدخل رقم هاتفك</strong> (الذي سجّلته المدرسة).
+        </li>
+        <li>
+          <strong>اضغط "دخول"</strong>.
+        </li>
+      </ol>
+
+      <div class="success-box">
+        <strong>✅ ملاحظة:</strong> إذا كان لديك أكثر من طالب مسجّل بنفس رقمك،
+        سيُطلب منك اختيار الطالب الذي تريد متابعته.
+      </div>
+    </div>
+
+    <!-- الفصل 3: لوحة التحكم -->
+    <div class="section" id="dashboard">
+      <h2>3️⃣ لوحة التحكم</h2>
+
+      <p>
+        بعد تسجيل الدخول، تظهر لوحة التحكم الرئيسية التي تُعطيك نظرة سريعة
+        على حالة المدرسة.
+      </p>
+
+      <h3>البطاقات الإحصائية</h3>
+
+      <table>
+        <tr>
+          <th>البطاقة</th>
+          <th>الوصف</th>
+        </tr>
+        <tr>
+          <td><strong>الطلاب النشطون</strong></td>
+          <td>عدد الطلاب المسجّلين حاليًا.</td>
+        </tr>
+        <tr>
+          <td><strong>الأقساط المحصّلة</strong></td>
+          <td>إجمالي المبالغ المُستلمة.</td>
+        </tr>
+        <tr>
+          <td><strong>مصاريف الشهر</strong></td>
+          <td>مجموع المصاريف خلال الشهر الحالي.</td>
+        </tr>
+        <tr>
+          <td><strong>إجمالي المتأخرات</strong></td>
+          <td>المبالغ المتبقية على الطلاب.</td>
+        </tr>
+      </table>
+
+      <h3>الرسوم البيانية</h3>
+
+      <ul>
+        <li>
+          <strong>📊 الإيرادات والمصاريف الشهرية:</strong>
+          مقارنة الإيرادات بالمصاريف خلال الأشهر الـ 12 الماضية.
+        </li>
+        <li>
+          <strong>🥧 توزيع الطلاب حسب الصف:</strong>
+          رسم دائري يوضح عدد الطلاب في كل صف.
+        </li>
+        <li>
+          <strong>📈 صافي الربح الشهري:</strong>
+          خط بياني يُبيّن ربحية كل شهر.
+        </li>
+        <li>
+          <strong>⭕ نسبة التحصيل:</strong>
+          نسبة الأقساط المُحصّلة من الإجمالي المتوقع.
+        </li>
+      </ul>
+
+      <h3>الأحداث القادمة</h3>
+
+      <p>
+        بطاقات صغيرة تعرض أقرب 5 أحداث من التقويم الأكاديمي (امتحانات، عطل،
+        اجتماعات). كل بطاقة تعرض:
+      </p>
+
+      <ul>
+        <li>نوع الحدث (أيقونة).</li>
+        <li>عدد الأيام المتبقية.</li>
+        <li>التاريخ.</li>
+      </ul>
+    </div>
+
+    <!-- الفصل 4: إدارة الطلاب -->
+    <div class="section" id="students">
+      <h2>4️⃣ إدارة الطلاب</h2>
+
+      <p>
+        صفحة "الطلاب" هي قلب النظام. تحتوي على:
+      </p>
+
+      <h3>عرض الطلاب</h3>
+
+      <ul>
+        <li>جدول بكل الطلاب المسجّلين.</li>
+        <li>كل صف يحوي: الرقم، الاسم، الجنس، الصف، ولي الأمر، الهاتف، الرسوم، حالة الغياب.</li>
+        <li><strong>اضغط على اسم الطالب</strong> لفتح ملفه الأكاديمي الكامل.</li>
+      </ul>
+
+      <h3>إضافة طالب جديد</h3>
+
+      <ol class="steps">
+        <li>اضغط زر <span class="badge badge-primary">+ إضافة طالب</span>.</li>
+        <li>أدخل اسم الطالب الكامل (مطلوب).</li>
+        <li>اختر الصف والشعبة.</li>
+        <li>أدخل تاريخ الميلاد.</li>
+        <li>اختر الجنس (ذكر/أنثى).</li>
+        <li>أدخل اسم ولي الأمر ورقم هاتفه (مطلوب).</li>
+        <li>أدخل الرسوم الكلية.</li>
+        <li>اضغط "إضافة الطالب".</li>
+      </ol>
+
+      <h3>تعديل/حذف</h3>
+
+      <ul>
+        <li><strong>تعديل:</strong> اضغط أيقونة ✏️ بجانب الطالب.</li>
+        <li><strong>حذف:</strong> اضغط أيقونة 🗑️، ثم أكّد.</li>
+      </ul>
+
+      <div class="danger-box">
+        <strong>⚠️ تنبيه:</strong> حذف الطالب يحذف:
+        <ul>
+          <li>كل درجاته.</li>
+          <li>كل مدفوعاته.</li>
+          <li>كل سجلات حضوره.</li>
+        </ul>
+        العملية <strong>لا يمكن التراجع عنها</strong>.
+      </div>
+
+      <h3>الفلاتر والبحث</h3>
+
+      <ul>
+        <li><strong>البحث:</strong> بالاسم، ولي الأمر، الرقم، الهاتف.</li>
+        <li><strong>فلتر الصف:</strong> اختر صفًا معينًا.</li>
+        <li><strong>فلتر الجنس:</strong> بنين فقط / بنات فقط.</li>
+      </ul>
+
+      <h3>تصدير Excel</h3>
+
+      <p>
+        اضغط زر <span class="badge badge-success">📥 تصدير Excel</span> لتنزيل
+        ملف Excel بكل الطلاب المعروضين (بعد الفلترة).
+      </p>
+
+      <div class="info-box">
+        <strong>💡 نصيحة:</strong> استخدم الفلاتر أولًا، ثم صدّر — سيكون الملف
+        أصغر وأدق.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>🖋️ <strong>مداد المحاسبي</strong> — دليل المستخدم</p>
+      <p>الإصدار 1.0 — 2026</p>
+      <p style="margin-top: 16px;">
+        <a href="#" style="color: #6366F1;">⬆️ العودة إلى الأعلى</a>
+      </p>
+    </div>
+
+  </div>
+
+  <!-- زر الطباعة العائم -->
+  <button class="print-fab" onclick="window.print()" title="طباعة / حفظ PDF">
+    🖨️
+  </button>
+
+</body>
+</html>

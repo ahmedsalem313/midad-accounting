@@ -15,6 +15,8 @@ import { PRIMARY_SUBJECTS_BY_GRADE, PRIMARY_GRADES_LIST, SECTIONS } from './data
 // ============================================
 export async function seedPrimarySchool() {
   const db = getDB()
+    // إعادة تعيين مؤشر تدوير المعلمين
+  global.teacherRotation = {}
   const stats = {
     teachers: 0,
     accountants: 0,
@@ -101,18 +103,17 @@ export async function seedPrimarySchool() {
   const teacherPassword = await hashPassword('teacher123')
 
   // مواد أساسية + عدد المعلمين لكل مادة
-  const teacherPlan = [
-    { subject: 'islamic',   count: 2 },
-    { subject: 'arabic',    count: 3 },
-    { subject: 'english',   count: 3 },
-    { subject: 'math',      count: 3 },
-    { subject: 'science',   count: 2 },
-    { subject: 'social',    count: 2 },
-    { subject: 'computer',  count: 1 },
-    { subject: 'art',       count: 1 },
-    { subject: 'pe',        count: 1 },
+   const teacherPlan = [
+    { subject: 'islamic',   count: 5 },
+    { subject: 'arabic',    count: 6 },
+    { subject: 'english',   count: 6 },
+    { subject: 'math',      count: 6 },
+    { subject: 'science',   count: 4 },
+    { subject: 'social',    count: 3 },
+    { subject: 'computer',  count: 2 },
+    { subject: 'art',       count: 2 },
+    { subject: 'pe',        count: 2 },
   ]
-
   const teachersBySubject = {}
   let teacherIndex = 1
 
@@ -238,48 +239,29 @@ export async function seedPrimarySchool() {
           teachers: [],
         }
 
-        // توزيع الحصص على معلمي المادة
+              // توزيع ذكي: نستخدم مؤشر عالمي لكل مادة لتدوير المعلمين
         const availableTeachers = teachersBySubject[subject.code] || []
         if (availableTeachers.length === 0) continue
 
-        // اختر معلمًا (أو أكثر حسب عدد الحصص)
-        if (subject.weekly <= 3 || availableTeachers.length === 1) {
-          // معلم واحد
-          const t = pickRandom(availableTeachers)
-          db.prepare(`
-            INSERT INTO timetable_subject_teachers (subject_id, teacher_id, lessons_count)
-            VALUES (?, ?, ?)
-          `).run(subjectId, t.id, subject.weekly)
+        // مؤشر عالمي لكل مادة (يستمر عبر الصفوف)
+        if (!global.teacherRotation) global.teacherRotation = {}
+        if (!global.teacherRotation[subject.code]) global.teacherRotation[subject.code] = 0
 
-          subjectsByGrade[grade][section][subject.code].teachers.push({
-            id: t.id,
-            count: subject.weekly,
-          })
-          stats.subjectTeachers++
-        } else {
-          // معلم أول (الأغلب) + معلم ثاني
-          const shuffled = [...availableTeachers].sort(() => 0.5 - Math.random())
-          const t1 = shuffled[0]
-          const t2 = shuffled[1] || shuffled[0]
+        // اختر معلمًا بالتدوير
+        const t = availableTeachers[global.teacherRotation[subject.code] % availableTeachers.length]
+        global.teacherRotation[subject.code]++
 
-          const c1 = Math.ceil(subject.weekly / 2)
-          const c2 = subject.weekly - c1
+        // سجّل الربط
+        db.prepare(`
+          INSERT INTO timetable_subject_teachers (subject_id, teacher_id, lessons_count)
+          VALUES (?, ?, ?)
+        `).run(subjectId, t.id, subject.weekly)
 
-          db.prepare(`
-            INSERT INTO timetable_subject_teachers (subject_id, teacher_id, lessons_count)
-            VALUES (?, ?, ?)
-          `).run(subjectId, t1.id, c1)
-          db.prepare(`
-            INSERT INTO timetable_subject_teachers (subject_id, teacher_id, lessons_count)
-            VALUES (?, ?, ?)
-          `).run(subjectId, t2.id, c2)
-
-          subjectsByGrade[grade][section][subject.code].teachers.push(
-            { id: t1.id, count: c1 },
-            { id: t2.id, count: c2 }
-          )
-          stats.subjectTeachers += 2
-        }
+        subjectsByGrade[grade][section][subject.code].teachers.push({
+          id: t.id,
+          count: subject.weekly,
+        })
+        stats.subjectTeachers++
       }
     }
   }
