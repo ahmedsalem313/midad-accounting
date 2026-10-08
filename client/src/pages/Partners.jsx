@@ -6,7 +6,7 @@ import {
 import toast from 'react-hot-toast'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
-
+import { Link } from 'react-router-dom'
 export default function Partners() {
   const { hasPermission } = useAuth()
   const [partners, setPartners] = useState([])
@@ -252,14 +252,17 @@ export default function Partners() {
                                style={{ background: 'linear-gradient(135deg, #8B5CF6, #6366F1)' }}>
                             {p.name.charAt(0)}
                           </div>
-                          <div>
-                            <p className="font-semibold">{p.name}</p>
-                            {p.username && (
-                              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                @{p.username}
-                              </p>
-                            )}
-                          </div>
+                                                  <div>
+                          <Link to={`/partners/${p.id}/capital`}
+                                className="font-semibold text-primary-600 hover:text-primary-800 hover:underline">
+                            {p.name}
+                          </Link>
+                          {p.username && (
+                            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                              @{p.username}
+                            </p>
+                          )}
+                        </div>
                         </div>
                       </td>
                       <td className="p-3 text-xs" dir="ltr">{p.phone || '—'}</td>
