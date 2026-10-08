@@ -34,6 +34,7 @@ export default function Settings() {
     school_gender: localStorage.getItem('midad_school_gender') || SCHOOL_GENDERS.MIXED,
     working_days: JSON.parse(localStorage.getItem('midad_working_days') || '[0,1,2,3,4,5]'),
     block_grades_enabled: false,
+    whatsapp_auto_notify_payment: true,
     block_grades_min_debt: 0,
     block_grades_print: true,
     block_grades_whatsapp: true,
@@ -56,6 +57,7 @@ export default function Settings() {
           school_type: data.school_type || prev.school_type,
           school_gender: data.school_gender || prev.school_gender,
           block_grades_enabled: data.block_grades_enabled === 'true',
+          whatsapp_auto_notify_payment: data.whatsapp_auto_notify_payment !== 'false',
           block_grades_min_debt: parseFloat(data.block_grades_min_debt) || 0,
           block_grades_print: data.block_grades_print !== 'false',
           block_grades_whatsapp: data.block_grades_whatsapp !== 'false',
@@ -93,6 +95,7 @@ export default function Settings() {
 
       await api.put('/settings', {
         school_name: settings.school_name,
+        whatsapp_auto_notify_payment: settings.whatsapp_auto_notify_payment ? 'true' : 'false',
         school_type: settings.school_type,
         school_gender: settings.school_gender,
         working_days: JSON.stringify(settings.working_days),
@@ -240,6 +243,37 @@ export default function Settings() {
             </button>
           </div>
         </div>
+      </div>
+      {/* إشعارات الواتساب */}
+      <div className="glass-card p-6 space-y-4">
+        <h3 className="font-bold text-lg flex items-center gap-2 border-b pb-3"
+            style={{ borderColor: 'var(--border-color)' }}>
+          📱 إشعارات الواتساب
+        </h3>
+
+        <div className="text-xs p-3 rounded-lg"
+             style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--text-secondary)' }}>
+          💡 يرسل إشعارًا لولي الأمر عند تسجيل دفعة جديدة
+        </div>
+
+        <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl border-2 transition-all"
+               style={{
+                 borderColor: settings.whatsapp_auto_notify_payment ? '#10B981' : 'var(--border-color)',
+                 background: settings.whatsapp_auto_notify_payment ? 'rgba(16,185,129,0.08)' : 'var(--bg-card)',
+               }}>
+          <input
+            type="checkbox"
+            checked={settings.whatsapp_auto_notify_payment}
+            onChange={(e) => setSettings({ ...settings, whatsapp_auto_notify_payment: e.target.checked })}
+            className="w-5 h-5 rounded accent-emerald-500"
+          />
+          <div className="flex-1">
+            <p className="font-bold">إشعار ولي الأمر عند تسجيل دفعة</p>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              يُرسل رسالة تفاصيل الدفعة + المتبقي تلقائيًا عبر الواتساب
+            </p>
+          </div>
+        </label>
       </div>
 
       {/* أيام الدوام */}

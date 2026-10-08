@@ -268,9 +268,18 @@ export default function Payments() {
       if (editingPayment) {
         await api.put(`/payments/${editingPayment.id}`, formData)
         toast.success('تم التحديث')
-      } else {
+            } else {
         const res = await api.post('/payments', formData)
-        toast.success(`تم التسجيل - إيصال: ${res.data.data.receipt_number}`)
+        const data = res.data.data
+
+        if (data.whatsapp_sent) {
+          toast.success(`✅ تم التسجيل + إشعار ولي الأمر (${data.receipt_number})`)
+        } else {
+          toast.success(`تم التسجيل - إيصال: ${data.receipt_number}`)
+          if (data.whatsapp_error) {
+            toast(`⚠️ لم يُرسل الإشعار: ${data.whatsapp_error}`, { icon: '⚠️' })
+          }
+        }
       }
       setShowModal(false)
       fetchAll()

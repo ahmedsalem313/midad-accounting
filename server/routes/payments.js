@@ -43,7 +43,7 @@ router.get('/:id', checkPermission('payments.view'), (req, res) => {
 })
 
 // POST - تسجيل دفعة
-router.post('/', checkPermission('payments.create'), (req, res) => {
+router.post('/', checkPermission('payments.create'), async (req, res) => {
   try {
     const { student_id, amount, paid_amount, due_date, payment_date, method, notes } = req.body
 
@@ -72,17 +72,101 @@ router.post('/', checkPermission('payments.create'), (req, res) => {
       method || 'cash', receiptNum, notes || null, req.user.id
     )
 
+    // ============================================
+    // 🔔 إشعار واتساب تلقائي لولي الأمر
+    // ============================================
+    let whatsappSent = false
+    let whatsappError = null
+
+    try {
+      // هل الإشعار التلقائي مفعّل؟
+      const setting = db.prepare("SELECT value FROM settings WHERE key = 'whatsapp_auto_notify_payment'").get()
+      const isEnabled = setting ? setting.value === 'true' : true // مفعّل افتراضيًا
+
+      if (isEnabled) {
+        // جلب بيانات الطالب + ولي الأمر
+        const student = db.prepare(`
+          SELECT id, full_name, grade, section, guardian_name, guardian_phone, total_fees
+          FROM students WHERE id = ?
+        `).get(student_id)
+
+        if (student?.guardian_phone) {
+          // احسب المتبقي بعد الدفعة
+          const totalPaid = db.prepare(`
+            SELECT COALESCE(SUM(paid_amount), 0) as t
+            FROM payments WHERE student_id = ?
+          `).get(student_id).t
+
+          const totalFees = student.total_fees || 0
+          const remaining = Math.max(0, totalFees - totalPaid)
+
+          // جلب اسم المدرسة
+          const schoolRow = db.prepare("SELECT value FROM settings WHERE key = 'school_name'").get()
+          const schoolName = schoolRow?.value || 'مداد المحاسبي'
+
+          // نص الرسالة
+          const payDate = payment_date || new Date().toISOString().split('T')[0]
+          const message = `عزيزي ولي الأمر ${student.guardian_name || ''}،
+
+تم استلام دفعة بمبلغ ${(paid_amount || 0).toLocaleString('ar-IQ')} د.ع
+للطالب: ${student.full_name}
+الصف: ${student.grade}${student.section ? ' - شعبة ' + student.section : ''}
+رقم الوصل: ${receiptNum}
+التاريخ: ${payDate}
+
+${remaining > 0
+  ? `💰 المتبقي: ${remaining.toLocaleString('ar-IQ')} د.ع`
+  : `✅ تم سداد كامل الرسوم. شكرًا لكم!`}
+
+شكرًا لتعاونكم معنا.
+${schoolName}`
+
+          // أرسل عبر الواتساب
+          const { sendMessage, isReady } = await import('../services/whatsapp.js')
+
+          if (isReady()) {
+            await sendMessage(student.guardian_phone, message)
+
+            // سجل الرسالة في قاعدة البيانات
+            db.prepare(`
+              INSERT INTO messages (
+                recipient_type, recipient_id, phone, message,
+                template, status, sent_at, sent_by
+              ) VALUES ('student', ?, ?, ?, 'payment_received', 'sent', CURRENT_TIMESTAMP, ?)
+            `).run(student.id, student.guardian_phone, message, req.user.id)
+
+            whatsappSent = true
+          } else {
+            whatsappError = 'WhatsApp غير متصل'
+          }
+        } else {
+          whatsappError = 'لا يوجد رقم هاتف لولي الأمر'
+        }
+      } else {
+        whatsappError = 'الإشعار التلقائي معطّل'
+      }
+    } catch (waErr) {
+      console.error('WhatsApp auto-notify error:', waErr.message)
+      whatsappError = waErr.message
+    }
+
     res.status(201).json({
       success: true,
-      data: { id: result.lastInsertRowid, receipt_number: receiptNum },
-      message: 'تم تسجيل الدفعة بنجاح',
+      data: {
+        id: result.lastInsertRowid,
+        receipt_number: receiptNum,
+        whatsapp_sent: whatsappSent,
+        whatsapp_error: whatsappError,
+      },
+      message: whatsappSent
+        ? 'تم تسجيل الدفعة + إشعار ولي الأمر'
+        : 'تم تسجيل الدفعة بنجاح',
     })
   } catch (error) {
     console.error(error)
     res.status(500).json({ success: false, error: 'حدث خطأ' })
   }
 })
-
 // PUT - تعديل دفعة
 router.put('/:id', checkPermission('payments.edit'), (req, res) => {
   try {
