@@ -210,19 +210,19 @@ const fetchStats = async () => {
       {/* ============================================
           رأس القائمة
       ============================================ */}
-      <div className="p-4 flex items-center gap-3 border-b flex-shrink-0"
+           <div className="py-5 px-3 flex flex-col items-center gap-2 border-b flex-shrink-0"
            style={{ borderColor: 'var(--border-color)' }}>
         <img
-  src="/logo.png"
-  alt="مداد"
-  className="w-11 h-11 rounded-xl object-contain flex-shrink-0"
-/>
+          src="/logo.png"
+          alt="مداد"
+          className="w-25 h-25 rounded-xl object-contain flex-shrink-0"
+        />
         {open && (
-          <div className="animate-fade-in overflow-hidden">
+          <div className="animate-fade-in text-center w-full">
             <h1 className="font-bold text-base leading-tight">
               {lang === 'ar' ? 'مداد المحاسبي' : 'Midad'}
             </h1>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
               {user?.role === 'admin' ? (lang === 'ar' ? 'مدير' : 'Admin') :
                user?.role === 'accountant' ? (lang === 'ar' ? 'محاسب' : 'Accountant') :
                user?.role === 'teacher' ? (lang === 'ar' ? 'معلم' : 'Teacher') :
@@ -231,7 +231,6 @@ const fetchStats = async () => {
           </div>
         )}
       </div>
-
       {/* ============================================
           حقل البحث
       ============================================ */}

@@ -43,7 +43,7 @@ export default function Login() {
           <img
   src="/logo.png"
   alt="مداد المحاسبي"
-  className="w-24 h-24 object-contain mx-auto mb-4"
+  className="w-50 h-50 object-contain mx-auto mb-4"
 />
           <h1 className="text-3xl font-bold mb-1">مداد المحاسبي</h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>

@@ -45,9 +45,12 @@ body {
   font-weight: 400;
 }
 
-.header .logo {
-  font-size: 60px;
-  margin-bottom: 12px;
+.header-logo {
+  width: 250px;
+  height: 160px;
+  object-fit: contain;
+  margin: 0 auto 20px;
+  display: block;
 }
 .developer-info {
   display: flex;
