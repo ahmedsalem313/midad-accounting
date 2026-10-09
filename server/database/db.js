@@ -7,6 +7,7 @@ import { createNotificationsTable } from './migrations/notifications.js'
 import { createTimetableTables } from './migrations/timetable.js'
 import { createStudentHistoryTable } from './migrations/studentHistory.js'
 import { createPartnersTables } from './migrations/partners.js'
+import { createFeeRemindersTables } from './migrations/feeReminders.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -34,6 +35,7 @@ export function initDatabase() {
 createTimetableTables(db)
 createStudentHistoryTable(db)
 createPartnersTables(db)
+createFeeRemindersTables(db)
   console.log('✅ Database initialized at:', config.database.path)
   return db
 }

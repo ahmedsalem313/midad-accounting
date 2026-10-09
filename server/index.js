@@ -46,6 +46,7 @@ const __dirname = path.dirname(__filename)
 import seedRoutes from './routes/seed.js'
 import brandingRoutes from './routes/branding.js'
 import partnersRoutes from './routes/partners.js'
+import feeRemindersRoutes from './routes/feeReminders.js'
 // ============ الإعداد الأساسي ============
 const app = express()
 const httpServer = createServer(app)
@@ -63,6 +64,7 @@ app.use('/api/promotions', promotionsRoutes)
 app.use('/api/seed', seedRoutes)
 app.use('/api/branding', brandingRoutes)
 app.use('/api/partners', partnersRoutes)
+app.use('/api/fee-reminders', feeRemindersRoutes)
 // الملفات المرفوعة
 app.use('/uploads', express.static(config.uploads.path))
 
