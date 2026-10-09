@@ -92,6 +92,7 @@ const MENU_GROUPS = [
     collapsible: true,
     items: [
       { path: '/whatsapp',        label: 'واتساب',       icon: MessageCircle, perm: 'whatsapp.fees' },
+      { path: '/fee-reminders',   label: 'تذكيرات الأقساط', icon: Wallet, perm: 'whatsapp.fees' },
       { path: '/communications',  label: 'سجل التواصل',  icon: Phone,         perm: 'communications.view' },
       { path: '/notes',           label: 'الملاحظات',    icon: MessageSquare, perm: 'notes.view' },
     ],

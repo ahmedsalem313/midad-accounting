@@ -44,6 +44,7 @@ import PartnerProfits from './pages/PartnerProfits'
 import PartnerCapital from './pages/PartnerCapital'
 import PartnerReport from './pages/PartnerReport'
 import PartnerDashboard from './pages/PartnerDashboard'
+import FeeReminders from './pages/FeeReminders'
 // ============================================
 // Protected Route للأدمن والمستخدمين
 // ============================================
@@ -175,7 +176,7 @@ export default function App() {
 
         {/* التواصل */}
         <Route path="whatsapp" element={<ProtectedRoute permission="whatsapp.fees"><WhatsApp /></ProtectedRoute>} />
-
+<Route path="fee-reminders" element={<ProtectedRoute permission="whatsapp.fees"><FeeReminders /></ProtectedRoute>} />
         {/* التقارير والإدارة */}
         <Route path="reports" element={<ProtectedRoute permission="reports.financial"><Reports /></ProtectedRoute>} />
         <Route path="users" element={<ProtectedRoute permission="users.view"><Users /></ProtectedRoute>} />
