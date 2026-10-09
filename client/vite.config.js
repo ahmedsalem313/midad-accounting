@@ -13,12 +13,16 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
+    hmr: {
+      clientPort: 443,
+      protocol: 'wss',
+    },
     allowedHosts: [
       'localhost',
       '.trycloudflare.com',
-      'spider-structural-contained-teach.trycloudflare.com',
+      'midad.midadapp.com.co',
+      '.midadapp.com.co',
     ],
-    cors: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
@@ -27,7 +31,7 @@ export default defineConfig({
         ws: true,
         configure: (proxy) => {
           proxy.on('error', (err) => {
-            console.error('[proxy error]', err.message)
+            console.error('proxy error:', err.message)
           })
         },
       },
@@ -35,6 +39,12 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
+      },
+      '/socket.io': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
       },
     },
   },

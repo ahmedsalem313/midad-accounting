@@ -86,12 +86,13 @@ function ProtectedRoute({ children, permission }) {
 // المكوّن الرئيسي
 // ============================================
 export default function App() {
-  const { user, loading } = useAuth()
   const location = useLocation()
   const path = location.pathname
 
   // ============================================
-  // 1) مسارات ولي الأمر
+  // 🔴 أولًا: مسارات ولي الأمر — قبل أي شيء آخر
+  // يجب أن تكون هنا قبل useAuth() لأن المستخدم قد يكون
+  // مسجّلًا كمدير لكنه يريد الدخول كولي أمر
   // ============================================
   if (path === '/parent-login') {
     return <ParentLogin />
@@ -101,6 +102,7 @@ export default function App() {
     return <ParentDashboard />
   }
 
+  const { user, loading } = useAuth()
   // ============================================
   // 2) الشريك — له لوحة خاصة
   // ============================================
