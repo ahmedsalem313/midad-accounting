@@ -48,6 +48,7 @@ import brandingRoutes from './routes/branding.js'
 import partnersRoutes from './routes/partners.js'
 import feeRemindersRoutes from './routes/feeReminders.js'
 import absenceRemindersRoutes from './routes/absenceReminders.js'
+import gradeNoticesRoutes from './routes/gradeNotices.js'
 // ============ الإعداد الأساسي ============
 const app = express()
 const httpServer = createServer(app)
@@ -67,6 +68,7 @@ app.use('/api/branding', brandingRoutes)
 app.use('/api/partners', partnersRoutes)
 app.use('/api/fee-reminders', feeRemindersRoutes)
 app.use('/api/absence-reminders', absenceRemindersRoutes)
+app.use('/api/grade-notices', gradeNoticesRoutes)
 // الملفات المرفوعة
 app.use('/uploads', express.static(config.uploads.path))
 

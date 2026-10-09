@@ -46,6 +46,7 @@ import PartnerReport from './pages/PartnerReport'
 import PartnerDashboard from './pages/PartnerDashboard'
 import FeeReminders from './pages/FeeReminders'
 import AbsenceReminders from './pages/AbsenceReminders'
+import GradeNotices from './pages/GradeNotices'
 // ============================================
 // Protected Route للأدمن والمستخدمين
 // ============================================
@@ -179,6 +180,7 @@ export default function App() {
         <Route path="whatsapp" element={<ProtectedRoute permission="whatsapp.fees"><WhatsApp /></ProtectedRoute>} />
 <Route path="fee-reminders" element={<ProtectedRoute permission="whatsapp.fees"><FeeReminders /></ProtectedRoute>} />
 <Route path="absence-reminders" element={<ProtectedRoute permission="whatsapp.fees"><AbsenceReminders /></ProtectedRoute>} />
+<Route path="grade-notices" element={<ProtectedRoute permission="whatsapp.grades"><GradeNotices /></ProtectedRoute>} />
         {/* التقارير والإدارة */}
         <Route path="reports" element={<ProtectedRoute permission="reports.financial"><Reports /></ProtectedRoute>} />
         <Route path="users" element={<ProtectedRoute permission="users.view"><Users /></ProtectedRoute>} />

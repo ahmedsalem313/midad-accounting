@@ -35,6 +35,7 @@ export default function Settings() {
     working_days: JSON.parse(localStorage.getItem('midad_working_days') || '[0,1,2,3,4,5]'),
     block_grades_enabled: false,
     whatsapp_auto_notify_payment: true,
+    parent_portal_url: '',
     block_grades_min_debt: 0,
     block_grades_print: true,
     block_grades_whatsapp: true,
@@ -58,6 +59,7 @@ export default function Settings() {
           school_gender: data.school_gender || prev.school_gender,
           block_grades_enabled: data.block_grades_enabled === 'true',
           whatsapp_auto_notify_payment: data.whatsapp_auto_notify_payment !== 'false',
+          parent_portal_url: data.parent_portal_url || '',
           block_grades_min_debt: parseFloat(data.block_grades_min_debt) || 0,
           block_grades_print: data.block_grades_print !== 'false',
           block_grades_whatsapp: data.block_grades_whatsapp !== 'false',
@@ -96,6 +98,7 @@ export default function Settings() {
       await api.put('/settings', {
         school_name: settings.school_name,
         whatsapp_auto_notify_payment: settings.whatsapp_auto_notify_payment ? 'true' : 'false',
+        parent_portal_url: settings.parent_portal_url || '',
         school_type: settings.school_type,
         school_gender: settings.school_gender,
         working_days: JSON.stringify(settings.working_days),
@@ -243,6 +246,40 @@ export default function Settings() {
             </button>
           </div>
         </div>
+      </div>
+            {/* رابط بوابة ولي الأمر */}
+      <div className="glass-card p-6 space-y-4">
+        <h3 className="font-bold text-lg flex items-center gap-2 border-b pb-3"
+            style={{ borderColor: 'var(--border-color)' }}>
+          🔗 رابط بوابة ولي الأمر
+        </h3>
+
+        <div className="text-xs p-3 rounded-lg"
+             style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--text-secondary)' }}>
+          💡 يُضاف هذا الرابط تلقائيًا في نهاية رسائل الواتساب لأولياء الأمور
+        </div>
+
+        <div>
+          <label className="text-sm font-medium block mb-2">رابط البوابة</label>
+          <input
+            type="url"
+            value={settings.parent_portal_url || ''}
+            onChange={(e) => setSettings({ ...settings, parent_portal_url: e.target.value })}
+            className="input-modern"
+            dir="ltr"
+            placeholder="https://example.com/parent-login"
+          />
+          <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+            استخدم الرابط الحالي من Cloudflare Tunnel، أو رابطًا ثابتًا (إن وُجد).
+          </p>
+        </div>
+
+        {settings.parent_portal_url && (
+          <div className="p-3 rounded-xl text-xs"
+               style={{ background: 'rgba(16,185,129,0.08)', color: '#059669' }}>
+            ✅ سيظهر الرابط في كل رسالة واتساب لأولياء الأمور
+          </div>
+        )}
       </div>
       {/* إشعارات الواتساب */}
       <div className="glass-card p-6 space-y-4">

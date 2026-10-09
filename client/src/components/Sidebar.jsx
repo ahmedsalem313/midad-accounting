@@ -93,6 +93,7 @@ const MENU_GROUPS = [
       { path: '/whatsapp',        label: 'واتساب',       icon: MessageCircle, perm: 'whatsapp.fees' },
       { path: '/fee-reminders',   label: 'تذكيرات الأقساط', icon: Wallet, perm: 'whatsapp.fees' },
       { path: '/absence-reminders', label: 'تذكيرات الغياب', icon: UserX, perm: 'whatsapp.fees' },
+      { path: '/grade-notices',   label: 'إشعارات الدرجات', icon: GraduationCap, perm: 'whatsapp.grades' },
       { path: '/communications',  label: 'سجل التواصل',  icon: Phone,         perm: 'communications.view' },
       { path: '/notes',           label: 'الملاحظات',    icon: MessageSquare, perm: 'notes.view' },
     ],

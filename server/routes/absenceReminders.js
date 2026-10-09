@@ -108,9 +108,11 @@ router.post('/send', checkPermission('whatsapp.fees'), async (req, res) => {
       WHERE s.id IN (${placeholders})
     `).all(...student_ids)
 
-    const schoolRow = db.prepare("SELECT value FROM settings WHERE key = 'school_name'").get()
+        const schoolRow = db.prepare("SELECT value FROM settings WHERE key = 'school_name'").get()
     const schoolName = schoolRow?.value || 'مداد المحاسبي'
 
+    const portalRow = db.prepare("SELECT value FROM settings WHERE key = 'parent_portal_url'").get()
+    const parentPortalUrl = portalRow?.value || ''
     const maxToSend = Math.min(parseInt(max_per_session) || 50, students.length)
     const listToSend = students.slice(0, maxToSend)
     const remainingCount = students.length - maxToSend
@@ -131,25 +133,30 @@ router.post('/send', checkPermission('whatsapp.fees'), async (req, res) => {
       const absenceDate = att?.date || today
       const sessionLabel = att?.session === 'evening' ? 'مسائي' : 'صباحي'
 
+      const portalSection = parentPortalUrl
+        ? `\n📌 لمتابعة سجل الحضور كاملًا، يرجى الدخول إلى بوابة ولي الأمر:\n${parentPortalUrl}\n`
+        : ''
+
       let msg = message_template || `عزيزي ولي الأمر ${student.guardian_name || ''}،
 
 نود إعلامكم بأن ابنكم/ابنتكم ${student.full_name} (${student.grade}${student.section ? ' - شعبة ' + student.section : ''}) قد تغيّب اليوم ${absenceDate} (الدوام ${sessionLabel}).
 
 📊 إجمالي الغياب: ${student.absence_total || 1} يوم
 ${student.absence_streak > 1 ? `⚠️ غياب متتالي: ${student.absence_streak} أيام` : ''}
-
+${portalSection}
 يرجى متابعة الحضور بانتظام.
 
 شكرًا لتعاونكم.
 ${schoolName}`
 
-      msg = msg
+            msg = msg
         .replace(/{اسم_الطالب}/g, student.full_name)
         .replace(/{اسم_ولي_الأمر}/g, student.guardian_name || '')
         .replace(/{الصف}/g, student.grade)
         .replace(/{التاريخ}/g, absenceDate)
         .replace(/{إجمالي_الغياب}/g, String(student.absence_total || 0))
         .replace(/{اسم_المدرسة}/g, schoolName)
+        .replace(/{رابط_البوابة}/g, parentPortalUrl || '')
 
       try {
         await sendMessage(student.guardian_phone, msg)

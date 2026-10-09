@@ -96,8 +96,11 @@ router.post('/send', checkPermission('whatsapp.fees'), async (req, res) => {
 
     if (students.length === 0) return res.status(404).json({ success: false, error: 'لا يوجد طلاب' })
 
-    const schoolRow = db.prepare("SELECT value FROM settings WHERE key = 'school_name'").get()
+       const schoolRow = db.prepare("SELECT value FROM settings WHERE key = 'school_name'").get()
     const schoolName = schoolRow?.value || 'مداد المحاسبي'
+
+    const portalRow = db.prepare("SELECT value FROM settings WHERE key = 'parent_portal_url'").get()
+    const parentPortalUrl = portalRow?.value || ''
 
     const maxToSend = Math.min(parseInt(max_per_session) || 50, students.length)
     const listToSend = students.slice(0, maxToSend)
@@ -117,14 +120,27 @@ router.post('/send', checkPermission('whatsapp.fees'), async (req, res) => {
       const student = listToSend[i]
       const remaining = (student.total_fees || 0) - (student.total_paid || 0)
 
-      let msg = message_template || `عزيزي ولي الأمر ${student.guardian_name || ''}،\n\nنود تذكيركم بأن القسط المتبقي للطالب ${student.full_name} هو:\n\n💰 ${remaining.toLocaleString('ar-IQ')} د.ع\n\nيرجى تسوية المبلغ في أقرب وقت.\n\nشكرًا لتعاونكم معنا.\n${schoolName}`
+      const portalSection = parentPortalUrl
+        ? `\n📌 لمتابعة تفاصيل الأقساط، يرجى الدخول إلى بوابة ولي الأمر:\n${parentPortalUrl}\n`
+        : ''
 
+      let msg = message_template || `عزيزي ولي الأمر ${student.guardian_name || ''}،
+
+نود تذكيركم بأن القسط المتبقي للطالب ${student.full_name} هو:
+
+💰 ${remaining.toLocaleString('ar-IQ')} د.ع
+
+يرجى تسوية المبلغ في أقرب وقت.
+${portalSection}
+شكرًا لتعاونكم معنا.
+${schoolName}`
       msg = msg
         .replace(/{اسم_الطالب}/g, student.full_name)
         .replace(/{اسم_ولي_الأمر}/g, student.guardian_name || '')
         .replace(/{المبلغ_المتبقي}/g, remaining.toLocaleString('ar-IQ'))
         .replace(/{الصف}/g, student.grade)
         .replace(/{اسم_المدرسة}/g, schoolName)
+        .replace(/{رابط_البوابة}/g, parentPortalUrl || '')
 
       const logResult = db.prepare(`
         INSERT INTO fee_reminder_log (session_id, student_id, phone, remaining, message, status)
