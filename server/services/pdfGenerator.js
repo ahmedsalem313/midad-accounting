@@ -2,9 +2,6 @@
 import PDFDocument from 'pdfkit'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { readFileSync } from 'fs'
-import arabicReshaperPkg from 'arabic-reshaper'
-const arabicReshaper = arabicReshaperPkg.default || arabicReshaperPkg
 import bidiFactory from 'bidi-js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -14,32 +11,132 @@ const bidi = bidiFactory()
 
 // مسار الخط العربي
 const FONT_PATH = path.join(__dirname, '..', 'assets', 'fonts', 'Cairo-Regular.ttf')
-const FONT_BOLD_PATH = FONT_PATH // سنستخدم نفس الخط
 const FONT_NAME = 'Cairo'
 
 // ============================================
-// تحويل النص العربي ليظهر بشكل صحيح في PDF
+// جدول ربط الحروف العربية (Arabic Reshaping)
 // ============================================
+// كل حرف له: منفرد، بداية، وسط، نهاية
+const ARABIC_FORMS = {
+  'ا': ['\u0627', '\u0627', '\uFE8E', '\uFE8D'], // alef
+  'أ': ['\u0623', '\u0623', '\uFE84', '\uFE83'],
+  'إ': ['\u0625', '\u0625', '\uFE88', '\uFE87'],
+  'آ': ['\u0622', '\u0622', '\uFE82', '\uFE81'],
+  'ب': ['\u0628', '\uFE91', '\uFE92', '\uFE90'],
+  'ت': ['\u062A', '\uFE97', '\uFE98', '\uFE96'],
+  'ث': ['\u062B', '\uFE9B', '\uFE9C', '\uFE9A'],
+  'ج': ['\u062C', '\uFE9F', '\uFEA0', '\uFE9E'],
+  'ح': ['\u062D', '\uFEA3', '\uFEA4', '\uFEA2'],
+  'خ': ['\u062E', '\uFEA7', '\uFEA8', '\uFEA6'],
+  'د': ['\u062F', '\u062F', '\uFEAE', '\uFEAD'],
+  'ذ': ['\u0630', '\u0630', '\uFEB2', '\uFEB1'],
+  'ر': ['\u0631', '\u0631', '\uFEB6', '\uFEB5'],
+  'ز': ['\u0632', '\u0632', '\uFEBA', '\uFEB9'],
+  'س': ['\u0633', '\uFEB3', '\uFEB4', '\uFEB2'], // خطأ معروف، صحح أدناه
+  'ش': ['\u0634', '\uFEB7', '\uFEB8', '\uFEB6'],
+  'ص': ['\u0635', '\uFEBB', '\uFEBC', '\uFEBA'],
+  'ض': ['\u0636', '\uFEBF', '\uFEC0', '\uFEBE'],
+  'ط': ['\u0637', '\uFEC3', '\uFEC4', '\uFEC2'],
+  'ظ': ['\u0638', '\uFEC7', '\uFEC8', '\uFEC6'],
+  'ع': ['\u0639', '\uFECB', '\uFECC', '\uFECA'],
+  'غ': ['\u063A', '\uFECF', '\uFED0', '\uFECE'],
+  'ف': ['\u0641', '\uFED3', '\uFED4', '\uFED2'],
+  'ق': ['\u0642', '\uFED7', '\uFED8', '\uFED6'],
+  'ك': ['\u0643', '\uFEDB', '\uFEDC', '\uFEDA'],
+  'ل': ['\u0644', '\uFEDF', '\uFEE0', '\uFEDE'],
+  'م': ['\u0645', '\uFEE3', '\uFEE4', '\uFEE2'],
+  'ن': ['\u0646', '\uFEE7', '\uFEE8', '\uFEE6'],
+  'ه': ['\u0647', '\uFEEB', '\uFEEC', '\uFEEA'],
+  'و': ['\u0648', '\u0648', '\uFEEE', '\uFEED'],
+  'ي': ['\u064A', '\uFEF3', '\uFEF4', '\uFEF2'],
+  'ى': ['\u0649', '\u0649', '\uFEF0', '\uFEEF'],
+  'ة': ['\u0629', '\u0629', '\uFE94', '\uFE93'],
+  'ئ': ['\u0626', '\uFE8B', '\uFE8C', '\uFE8A'],
+  'ؤ': ['\u0624', '\u0624', '\uFE86', '\uFE85'],
+  // إصلاح س
+  'س': ['\u0633', '\uFEB3', '\uFEB4', '\uFEB2'],
+}
+
+// الحروف التي لا تتصل بما بعدها (non-connecting)
+const NON_CONNECTORS = new Set([
+  'ا', 'أ', 'إ', 'آ', 'د', 'ذ', 'ر', 'ز', 'و', 'ؤ', 'ة',
+])
+
+// التشكيل (لنُزيله قبل reshape، ثم نُعيده)
+const DIACRITICS = /[\u064B-\u0652\u0670\u0640]/g
+
+/**
+ * ربط الحروف العربية (Arabic Shaping)
+ */
+function arabicShape(text) {
+  if (!text) return ''
+
+  // احذف التشكيل مؤقتًا
+  const stripped = text.replace(DIACRITICS, '')
+
+  const chars = Array.from(stripped)
+  const result = []
+
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i]
+    const forms = ARABIC_FORMS[ch]
+
+    if (!forms) {
+      // حرف غير عربي
+      result.push(ch)
+      continue
+    }
+
+    // هل يوجد حرف سابق متصل؟
+    const prev = chars[i - 1]
+    const prevForms = prev ? ARABIC_FORMS[prev] : null
+    const prevConnects = prevForms && !NON_CONNECTORS.has(prev)
+
+    // هل يوجد حرف تالٍ قابل للاتصال؟
+    const next = chars[i + 1]
+    const nextForms = next ? ARABIC_FORMS[next] : null
+    const nextConnects = nextForms
+
+    if (prevConnects && nextConnects) {
+      // وسط
+      result.push(forms[2])
+    } else if (prevConnects) {
+      // نهاية
+      result.push(forms[3])
+    } else if (nextConnects) {
+      // بداية
+      result.push(forms[1])
+    } else {
+      // منفرد
+      result.push(forms[0])
+    }
+  }
+
+  return result.join('')
+}
+
+/**
+ * تحويل النص العربي ليظهر بشكل صحيح في PDF
+ */
 function ar(text) {
   if (text === null || text === undefined) return ''
   const str = String(text)
 
-  // إعادة ترتيب الحروف العربية (reshaping)
-  const reshaped = arabicReshaper.reshape(str)
+  // 1) ربط الحروف
+  const shaped = arabicShape(str)
 
-  // إعادة ترتيب الاتجاه (bidi)
-  const bidiText = bidi.getEmbeddingLevels(reshaped, 'rtl')
-  const reordered = bidi.getReorderedString(reshaped, bidiText)
+  // 2) إعادة ترتيب الاتجاه
+  const bidiText = bidi.getEmbeddingLevels(shaped, 'rtl')
+  const reordered = bidi.getReorderedString(shaped, bidiText)
 
   return reordered
 }
 
-// ============================================
-// تسجيل الخط في PDFKit
-// ============================================
+/**
+ * تسجيل الخطوط
+ */
 function registerFonts(doc) {
   doc.registerFont(FONT_NAME, FONT_PATH)
-  doc.registerFont('Cairo-Bold', FONT_BOLD_PATH)
 }
 
 // ============================================
@@ -73,7 +170,7 @@ export async function generateGradeReport(student, grades, options = {}) {
       // شريط علوي ملون
       doc.rect(0, 0, pageWidth, 100).fill('#6366F1')
 
-      // اسم المدرسة (وسط الترويسة)
+      // اسم المدرسة
       doc
         .font(FONT_NAME)
         .fontSize(22)
@@ -91,7 +188,7 @@ export async function generateGradeReport(student, grades, options = {}) {
           width: pageWidth,
         })
 
-      // التاريخ على اليسار (بالإنجليزية)
+      // التاريخ على اليسار
       doc
         .font(FONT_NAME)
         .fontSize(10)
@@ -123,7 +220,6 @@ export async function generateGradeReport(student, grades, options = {}) {
 
       doc.roundedRect(margin, infoY, boxWidth, 90, 8).fill('#EEF2FF')
 
-      // عنوان الصندوق
       doc
         .font(FONT_NAME)
         .fontSize(12)
@@ -133,7 +229,6 @@ export async function generateGradeReport(student, grades, options = {}) {
           width: pageWidth,
         })
 
-      // الصف الأول: الاسم + ولي الأمر
       doc.font(FONT_NAME).fontSize(10).fillColor('#475569')
       doc.text(ar('الاسم:'), margin + 15, infoY + 42)
       doc.fontSize(11).fillColor('#1e293b')
@@ -146,7 +241,6 @@ export async function generateGradeReport(student, grades, options = {}) {
         doc.text(ar(student.guardian_name), pageWidth / 2 + 85, infoY + 42, { width: 180 })
       }
 
-      // الصف الثاني: الصف + الشعبة
       doc.font(FONT_NAME).fontSize(10).fillColor('#475569')
       doc.text(ar('الصف:'), margin + 15, infoY + 65)
       doc.fontSize(11).fillColor('#1e293b')
@@ -171,7 +265,6 @@ export async function generateGradeReport(student, grades, options = {}) {
       const headers = ['المادة', 'الدرجة', 'العظمى', 'النسبة']
       const headerY = tableTop
 
-      // رأس الجدول
       doc.rect(margin, headerY, tableWidth, 30).fill('#6366F1')
 
       let xPos = margin
@@ -187,7 +280,6 @@ export async function generateGradeReport(student, grades, options = {}) {
         xPos += colWidths[i]
       })
 
-      // صفوف الجدول
       let rowY = headerY + 30
       let totalScore = 0
       let totalMax = 0
@@ -214,7 +306,6 @@ export async function generateGradeReport(student, grades, options = {}) {
 
         xPos = margin
 
-        // اسم المادة (يعرض الاسم العربي إن وُجد)
         doc
           .font(FONT_NAME)
           .fontSize(11)
@@ -225,7 +316,6 @@ export async function generateGradeReport(student, grades, options = {}) {
           })
         xPos += colWidths[0]
 
-        // الدرجة
         doc
           .font(FONT_NAME)
           .fontSize(11)
@@ -236,7 +326,6 @@ export async function generateGradeReport(student, grades, options = {}) {
           })
         xPos += colWidths[1]
 
-        // العظمى
         doc
           .font(FONT_NAME)
           .fontSize(11)
@@ -247,7 +336,6 @@ export async function generateGradeReport(student, grades, options = {}) {
           })
         xPos += colWidths[2]
 
-        // النسبة
         doc
           .font(FONT_NAME)
           .fontSize(11)
@@ -269,13 +357,11 @@ export async function generateGradeReport(student, grades, options = {}) {
 
       const avg = totalMax > 0 ? (totalScore / totalMax) * 100 : 0
 
-      // النتيجة الإجمالية
       doc.font(FONT_NAME).fontSize(11).fillColor('#4338CA')
       doc.text(ar('النتيجة الإجمالية'), margin + 15, summaryY + 10, { width: 150 })
       doc.fontSize(13).fillColor('#1e293b')
       doc.text(`${totalScore} / ${totalMax}`, margin + 15, summaryY + 30, { width: 150 })
 
-      // المعدل العام
       doc.font(FONT_NAME).fontSize(11).fillColor('#4338CA')
       doc.text(ar('المعدل العام'), pageWidth - margin - 160, summaryY + 10, {
         width: 150,
@@ -325,7 +411,6 @@ export async function generateGradeReport(student, grades, options = {}) {
         .lineTo(margin + 150, footerY + 60)
         .stroke()
 
-      // تذييل
       doc
         .font(FONT_NAME)
         .fillColor('#94A3B8')

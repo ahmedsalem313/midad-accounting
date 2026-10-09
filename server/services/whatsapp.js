@@ -117,20 +117,20 @@ export function initWhatsApp(io) {
   })
 
   client.on('disconnected', async (reason) => {
-    currentStatus = 'disconnected'
-    currentInfo = null
-    currentQR = null
-    console.error('❌ انقطع الاتصال:', reason)
-    if (ioInstance) ioInstance.emit('whatsapp:disconnected', reason)
+  currentStatus = 'disconnected'
+  currentInfo = null
+  currentQR = null
+  console.error('❌ انقطع الاتصال:', reason)
+  if (ioInstance) ioInstance.emit('whatsapp:disconnected', reason)
 
-    // حاول إعادة التهيئة بعد 5 ثواني
-    setTimeout(() => {
-      if (currentStatus === 'disconnected') {
-        console.log('🔄 محاولة إعادة الاتصال...')
-        initWhatsApp(ioInstance)
-      }
-    }, 5000)
-  })
+  // حاول إعادة التهيئة بعد 10 ثواني
+  setTimeout(() => {
+    if (currentStatus === 'disconnected') {
+      console.log('🔄 محاولة إعادة الاتصال...')
+      initWhatsApp(ioInstance)
+    }
+  }, 10000)
+})
 
   client.on('loading_screen', (percent, message) => {
     console.log(`⏳ ${message || 'جاري التحميل'}: ${percent}%`)
