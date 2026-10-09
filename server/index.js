@@ -47,6 +47,7 @@ import seedRoutes from './routes/seed.js'
 import brandingRoutes from './routes/branding.js'
 import partnersRoutes from './routes/partners.js'
 import feeRemindersRoutes from './routes/feeReminders.js'
+import absenceRemindersRoutes from './routes/absenceReminders.js'
 // ============ الإعداد الأساسي ============
 const app = express()
 const httpServer = createServer(app)
@@ -65,6 +66,7 @@ app.use('/api/seed', seedRoutes)
 app.use('/api/branding', brandingRoutes)
 app.use('/api/partners', partnersRoutes)
 app.use('/api/fee-reminders', feeRemindersRoutes)
+app.use('/api/absence-reminders', absenceRemindersRoutes)
 // الملفات المرفوعة
 app.use('/uploads', express.static(config.uploads.path))
 

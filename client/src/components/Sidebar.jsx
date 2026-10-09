@@ -5,9 +5,8 @@ import {
   Calendar, CheckSquare, Banknote, HandCoins,
   MessageCircle, BarChart3, UserCog, Shield, Settings as SettingsIcon,
   Award, AlertTriangle, BookOpen, Trophy, MessageSquare, Phone, Gift, QrCode,
-  ChevronDown, Search, X, TrendingUp, Bell,  Briefcase,
+  ChevronDown, Search, X, TrendingUp, Bell,  Briefcase, UserX, Palette
 
-  Palette
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
@@ -93,6 +92,7 @@ const MENU_GROUPS = [
     items: [
       { path: '/whatsapp',        label: 'واتساب',       icon: MessageCircle, perm: 'whatsapp.fees' },
       { path: '/fee-reminders',   label: 'تذكيرات الأقساط', icon: Wallet, perm: 'whatsapp.fees' },
+      { path: '/absence-reminders', label: 'تذكيرات الغياب', icon: UserX, perm: 'whatsapp.fees' },
       { path: '/communications',  label: 'سجل التواصل',  icon: Phone,         perm: 'communications.view' },
       { path: '/notes',           label: 'الملاحظات',    icon: MessageSquare, perm: 'notes.view' },
     ],
