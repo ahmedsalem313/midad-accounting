@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import api from '../services/api'
-import { connectSocket, disconnectSocket } from '../lib/socket'
 
 const AuthContext = createContext(null)
 
@@ -26,9 +25,6 @@ export function AuthProvider({ children }) {
         setUser(JSON.parse(savedUser))
         setPermissions(JSON.parse(savedPerms || '[]'))
       }
-
-      // 🔌 ربط Socket.io
-      connectSocket(token)
 
       // 2) ثم حدّث من السيرفر
       try {
@@ -58,9 +54,6 @@ export function AuthProvider({ children }) {
     localStorage.setItem('midad_user', JSON.stringify(userData))
     localStorage.setItem('midad_permissions', JSON.stringify(perms))
 
-    // 🔌 ربط Socket.io بعد تسجيل الدخول
-    connectSocket(token)
-
     setUser(userData)
     setPermissions(perms)
     return userData
@@ -87,10 +80,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('midad_token')
     localStorage.removeItem('midad_user')
     localStorage.removeItem('midad_permissions')
-
-    // 🔌 فصل Socket.io
-    disconnectSocket()
-
     setUser(null)
     setPermissions([])
   }
