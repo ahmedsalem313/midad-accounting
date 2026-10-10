@@ -13,4 +13,6 @@ server/database/whatsapp-session/
 *.session
 session/
 # WhatsApp Web.js cache
-server/.wwebjs_cache/
+server/.wwebjs_cache/server/database/data/*.db
+server/database/data/*.db-wal
+server/database/data/*.db-shm
