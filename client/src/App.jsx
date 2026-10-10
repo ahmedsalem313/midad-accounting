@@ -88,13 +88,12 @@ export default function App() {
   // أولًا: مسارات ولي الأمر
   // ============================================
   if (path === '/parent-login') {
-    return <ParentLogin />
-  }
+  return <ParentLogin />
+}
 
-  if (path.startsWith('/parent')) {
-    return <ParentDashboard />
-  }
-
+if (path === '/parent' || path.startsWith('/parent/')) {
+  return <ParentDashboard />
+}
   // ============================================
   // لوحة الشريك
   // ============================================

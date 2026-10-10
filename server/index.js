@@ -165,7 +165,24 @@ setIo(io);
 
 // ============ WhatsApp ============
 initWhatsApp(io)
+// ============ خدمة ملفات React المبنية ============
+const clientDist = path.join(__dirname, '../client/dist')
 
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist))
+
+  // SPA fallback — أي مسار غير API يُعيد index.html
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/socket.io')) {
+      return next()
+    }
+    res.sendFile(path.join(clientDist, 'index.html'))
+  })
+
+  console.log('✅ Serving client from:', clientDist)
+} else {
+  console.warn('⚠️  client/dist not found — run: cd client && npm run build')
+}
 app.set('io', io)
 
 // ============ معالجة الأخطاء ============

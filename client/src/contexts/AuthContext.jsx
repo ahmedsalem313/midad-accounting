@@ -10,6 +10,10 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const initAuth = async () => {
+      if (window.location.pathname.startsWith('/parent')) {
+      setLoading(false)
+      return
+    }
       const token = localStorage.getItem('midad_token')
 
       if (!token) {

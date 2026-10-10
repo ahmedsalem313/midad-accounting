@@ -4,7 +4,7 @@ import {
   Wallet, GraduationCap, CheckSquare, Award, LogOut, User,
   TrendingUp, CheckCircle, XCircle, Clock, FileText, DollarSign,
   AlertCircle, ChevronLeft, Users, AlertTriangle, MessageSquare, Phone,
-  BookOpen, Calendar as CalendarIcon2
+  BookOpen, Calendar as CalendarIcon
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
