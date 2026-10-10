@@ -471,6 +471,29 @@ export default function Settings() {
           </>
         )}
       </div>
+      {/* دليل المستخدم */}
+      <div className="glass-card p-5 mb-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+               style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}>
+            <span className="text-white text-xl">📖</span>
+          </div>
+          <div>
+            <h3 className="font-bold">دليل المستخدم</h3>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              شرح كامل لكل ميزات النظام
+            </p>
+          </div>
+        </div>
+        <a
+          href="/docs/index.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-primary flex items-center justify-center gap-2 w-full"
+        >
+          📖 فتح دليل المستخدم
+        </a>
+      </div>
 
       {/* زر الحفظ */}
       <div className="flex justify-end">

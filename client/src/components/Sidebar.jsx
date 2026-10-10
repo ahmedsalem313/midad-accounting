@@ -110,8 +110,7 @@ const MENU_GROUPS = [
   },
   {
     id: 'system',
-    label: 'النظام',
-    icon: SettingsIcon,
+    label: 'النظام',    icon: SettingsIcon,
     color: '#64748B',
     collapsible: true,
     items: [

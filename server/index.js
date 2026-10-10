@@ -187,7 +187,8 @@ app.set('io', io)
 
 // ============ معالجة الأخطاء ============
 app.use(errorHandler)
-
+// ============ خدمة دليل المستخدم ============
+app.use('/docs', express.static(path.join(__dirname, '../docs')))
 // ============ تشغيل السيرفر ============
 httpServer.listen(config.port, '0.0.0.0', () => {
   console.log('')
