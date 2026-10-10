@@ -3,3 +3,51 @@ echo "# Database files (do not commit)" >> .gitignore
 echo "server/database/data/*.db" >> .gitignore
 echo "server/database/data/*.db-wal" >> .gitignore
 echo "server/database/data/*.db-shm" >> .gitignore
+# Environment
+.env
+server/.env
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build output
+client/dist/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# WhatsApp
+server/.wwebjs_cache/
+server/database/whatsapp-session/
+
+# Database
+server/database/data/*.db
+server/database/data/*.db-wal
+server/database/data/*.db-shm
+# Environment
+.env
+server/.env
+
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build output
+client/dist/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# WhatsApp
+server/.wwebjs_cache/
+server/database/whatsapp-session/
+
+# Database
+server/database/data/*.db
+server/database/data/*.db-wal
+server/database/data/*.db-shm
