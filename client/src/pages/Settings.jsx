@@ -267,7 +267,7 @@ export default function Settings() {
             onChange={(e) => setSettings({ ...settings, parent_portal_url: e.target.value })}
             className="input-modern"
             dir="ltr"
-            placeholder="https://example.com/parent-login"
+            placeholder="https://midad.midadapp.com.co/parent-login"
           />
           <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
             استخدم الرابط الحالي من Cloudflare Tunnel، أو رابطًا ثابتًا (إن وُجد).

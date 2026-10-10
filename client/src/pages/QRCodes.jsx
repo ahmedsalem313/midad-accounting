@@ -51,7 +51,7 @@ const getBaseUrl = () => {
   return `http://${MANUAL_IP}:${port}`
 }
   const baseUrl = getBaseUrl()
-  const generalUrl = `${baseUrl}#/parent-login`
+  const generalUrl = `${baseUrl}/parent-login`
 
   // ============================================
   // جلب البيانات
@@ -126,7 +126,7 @@ const getBaseUrl = () => {
   // ============================================
   const getStudentUrl = (student) => {
   const phone = student.guardian_phone || ''
-  return `${baseUrl}#/parent-login?phone=${phone}`
+  return `${baseUrl}/parent-login?phone=${phone}`
 }
 
   return (
