@@ -1,18 +1,5 @@
-node_modules/
-.env
-.env.local
-dist/
-build/
-*.log
-.DS_Store
-.DS_Store?
-._*
-
-# WhatsApp Session (بيانات مؤقتة وحساسة)
-server/database/whatsapp-session/
-*.session
-session/
-# WhatsApp Web.js cache
-server/.wwebjs_cache/server/database/data/*.db
-server/database/data/*.db-wal
-server/database/data/*.db-shm
+echo "" >> .gitignore
+echo "# Database files (do not commit)" >> .gitignore
+echo "server/database/data/*.db" >> .gitignore
+echo "server/database/data/*.db-wal" >> .gitignore
+echo "server/database/data/*.db-shm" >> .gitignore
