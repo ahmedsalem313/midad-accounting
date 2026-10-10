@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   Wallet, GraduationCap, CheckSquare, Award, LogOut, User,
   TrendingUp, CheckCircle, XCircle, Clock, FileText, DollarSign,
-  AlertCircle, ChevronLeft, Users, AlertTriangle, MessageSquare, Phone
+  AlertCircle, ChevronLeft, Users, AlertTriangle, MessageSquare, Phone,
+  BookOpen, Calendar as CalendarIcon
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
@@ -72,6 +73,13 @@ const COMM_STATUSES = {
   pending:        { label: 'قيد الانتظار', color: '#F59E0B', icon: '⏳' },
   resolved:       { label: 'تم الحل',      color: '#10B981', icon: '✅' },
   needs_followup: { label: 'يحتاج متابعة', color: '#EF4444', icon: '⚠️' },
+}
+const ASSIGNMENT_STATUS = {
+  pending:       { label: 'لم يُسلَّم', color: '#EF4444', icon: '⏳' },
+  submitted:     { label: 'تم التسليم', color: '#10B981', icon: '✅' },
+  late:          { label: 'متأخر',     color: '#F59E0B', icon: '⚠️' },
+  not_submitted: { label: 'غير مُسلَّم', color: '#DC2626', icon: '❌' },
+  graded:        { label: 'مُصحَّح',   color: '#6366F1', icon: '📊' },
 }
 
 const NOTE_CATEGORIES = {
@@ -211,10 +219,11 @@ export default function ParentDashboard() {
 
   if (!data) return null
 
-  const {
+    const {
     student, fees, grades = [], gradesBlocked = false, gradesBlockReason = null,
     attendance = [], attendanceStats = {}, behavior = [], warnings = [],
     publicNotes = [], communications = [], schoolName,
+    assignments = [], overallGrade = {},
   } = data
 
   return (
@@ -257,10 +266,11 @@ export default function ParentDashboard() {
 
       {/* Tabs */}
       <div className="glass-card p-2 flex flex-wrap gap-1">
-                {[
+                        {[
           { id: 'overview',       label: 'نظرة عامة',     icon: TrendingUp },
           { id: 'fees',           label: 'الأقساط',        icon: Wallet },
           { id: 'grades',         label: 'الدرجات',        icon: GraduationCap },
+          { id: 'assignments',    label: 'الواجبات',       icon: BookOpen },
           { id: 'attendance',     label: 'الحضور',         icon: CheckSquare },
           { id: 'behavior',       label: 'السلوك',         icon: Award },
           { id: 'calendar',       label: 'التقويم',        icon: CalendarIcon },
@@ -327,7 +337,26 @@ export default function ParentDashboard() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="glass-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp size={18} style={{ color: '#8B5CF6' }} />
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>المعدل العام</p>
+              </div>
+              {gradesBlocked ? (
+                <p className="text-lg font-bold text-slate-400">🚫</p>
+              ) : (
+                <>
+                  <p className="text-lg font-bold" style={{ color: overallGrade?.color || '#8B5CF6' }}>
+                    {data.overallAverage || 0}%
+                  </p>
+                  <p className="text-xs font-bold" style={{ color: overallGrade?.color }}>
+                    {overallGrade?.icon} {overallGrade?.label}
+                  </p>
+                </>
+              )}
+            </div>
+
             <div className="glass-card p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Wallet size={18} style={{ color: '#10B981' }} />
@@ -546,6 +575,106 @@ export default function ParentDashboard() {
             </div>
           )}
         </>
+      )}
+      {/* ========== الواجبات ========== */}
+      {activeTab === 'assignments' && (
+        <div className="space-y-4">
+          {assignments.length === 0 ? (
+            <div className="glass-card p-10 text-center">
+              <BookOpen size={48} className="mx-auto mb-3 text-slate-400" />
+              <p style={{ color: 'var(--text-secondary)' }}>لا توجد واجبات حتى الآن</p>
+            </div>
+          ) : (
+            <>
+              {/* ملخص */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="glass-card p-4 text-center">
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>الإجمالي</p>
+                  <p className="text-xl font-bold">{assignments.length}</p>
+                </div>
+                <div className="glass-card p-4 text-center">
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>تم التسليم</p>
+                  <p className="text-xl font-bold text-emerald-500">
+                    {assignments.filter((a) => a.submission_status === 'submitted' || a.submission_status === 'graded').length}
+                  </p>
+                </div>
+                <div className="glass-card p-4 text-center">
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>متأخر</p>
+                  <p className="text-xl font-bold text-amber-500">
+                    {assignments.filter((a) => a.submission_status === 'late').length}
+                  </p>
+                </div>
+                <div className="glass-card p-4 text-center">
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>لم يُسلَّم</p>
+                  <p className="text-xl font-bold text-red-500">
+                    {assignments.filter((a) => !a.submission_status || a.submission_status === 'pending' || a.submission_status === 'not_submitted').length}
+                  </p>
+                </div>
+              </div>
+
+              {/* القائمة */}
+              {assignments.map((a) => {
+                const statusInfo = ASSIGNMENT_STATUS[a.submission_status] || ASSIGNMENT_STATUS.pending
+                const daysLeft = Math.ceil((new Date(a.due_date) - new Date()) / (1000 * 60 * 60 * 24))
+                const isPast = daysLeft < 0
+
+                return (
+                  <div key={a.id}
+                       className="glass-card p-5"
+                       style={{ borderRight: `4px solid ${statusInfo.color}` }}>
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                           style={{ background: `${statusInfo.color}20` }}>
+                        {statusInfo.icon}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <span className="badge"
+                                style={{ background: `${statusInfo.color}20`, color: statusInfo.color }}>
+                            {statusInfo.label}
+                          </span>
+                          <span className="badge"
+                                style={{ background: 'rgba(99,102,241,0.15)', color: '#4338CA' }}>
+                            📚 {SUBJECT_NAMES[a.subject] || a.subject}
+                          </span>
+                          {!a.submission_status || a.submission_status === 'pending' ? (
+                            <span className="badge"
+                                  style={{
+                                    background: isPast ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                                    color: isPast ? '#DC2626' : '#92400E',
+                                  }}>
+                              {isPast ? `⚠️ متأخر ${Math.abs(daysLeft)} يوم` :
+                               daysLeft === 0 ? '🔔 اليوم' :
+                               daysLeft === 1 ? '⏰ غدًا' :
+                               `بعد ${daysLeft} يوم`}
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <h4 className="font-bold text-lg mb-1">{a.title}</h4>
+
+                        {a.description && (
+                          <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
+                            {a.description}
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          <span>📅 تاريخ التسليم: <strong dir="ltr">{a.due_date}</strong></span>
+                          {a.obtained_score != null && (
+                            <span>📊 الدرجة: <strong>{a.obtained_score} / {a.max_score}</strong></span>
+                          )}
+                          <span>👤 {a.teacher_name}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </>
+          )}
+        </div>
       )}
 
       {/* ========== الحضور ========== */}

@@ -264,11 +264,66 @@ const communications = db.prepare(`
     // ============================================
     const schoolRow = db.prepare("SELECT value FROM settings WHERE key = 'school_name'").get()
     const schoolName = schoolRow?.value || 'مداد المحاسبي'
+    // ============================================
+    // 7) الواجبات (آخر 20)
+    // ============================================
+    const assignments = db.prepare(`
+      SELECT 
+        a.id,
+        a.title,
+        a.description,
+        a.subject,
+        a.due_date,
+        a.max_score,
+        u.full_name as teacher_name,
+        s.status as submission_status,
+        s.score as obtained_score,
+        s.submitted_at,
+        s.notes as submission_notes
+      FROM assignments a
+      JOIN users u ON u.id = a.teacher_id
+      LEFT JOIN assignment_submissions s 
+        ON s.assignment_id = a.id AND s.student_id = ?
+      WHERE a.grade = ?
+        AND (a.section IS NULL OR a.section = ?)
+      ORDER BY a.due_date DESC
+      LIMIT 20
+    `).all(studentId, student.grade, student.section || null)
 
+    // ============================================
+    // 8) المعدل العام والتقدير
+    // ============================================
+    let overallAverage = 0
+    let overallGrade = { label: '—', color: '#64748B', icon: '—' }
+
+    if (!gradesBlocked && grades.length > 0) {
+      // اجمع درجات كل مادة (أخذ أعلى درجة لكل امتحان)
+      const bySubjectExam = {}
+      for (const g of grades) {
+        const key = `${g.subject}-${g.exam_type}`
+        if (!bySubjectExam[key] || g.score > bySubjectExam[key].score) {
+          bySubjectExam[key] = g
+        }
+      }
+      const uniqueGrades = Object.values(bySubjectExam)
+      const totalScore = uniqueGrades.reduce((s, g) => s + g.score, 0)
+      const totalMax = uniqueGrades.reduce((s, g) => s + (g.max_score || 100), 0)
+      overallAverage = totalMax > 0 ? (totalScore / totalMax) * 100 : 0
+
+      if (overallAverage >= 90) overallGrade = { label: 'ممتاز', color: '#10B981', icon: '🌟' }
+      else if (overallAverage >= 80) overallGrade = { label: 'جيد جدًا', color: '#3B82F6', icon: '⭐' }
+      else if (overallAverage >= 70) overallGrade = { label: 'جيد', color: '#6366F1', icon: '👍' }
+      else if (overallAverage >= 60) overallGrade = { label: 'متوسط', color: '#F59E0B', icon: '👌' }
+      else if (overallAverage >= 50) overallGrade = { label: 'مقبول', color: '#F97316', icon: '📗' }
+      else overallGrade = { label: 'ضعيف', color: '#EF4444', icon: '⚠️' }
+    }
     res.json({
   success: true,
   data: {
     student,
+    assignments,
+    overallAverage: Math.round(overallAverage * 100) / 100,
+    overallGrade,
     fees: {
       totalFees,
       totalPaid,

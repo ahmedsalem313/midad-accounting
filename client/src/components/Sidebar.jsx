@@ -5,7 +5,8 @@ import {
   Calendar, CheckSquare, Banknote, HandCoins,
   MessageCircle, BarChart3, UserCog, Shield, Settings as SettingsIcon,
   Award, AlertTriangle, BookOpen, Trophy, MessageSquare, Phone, Gift, QrCode,
-  ChevronDown, Search, X, TrendingUp, Bell
+  ChevronDown, Search, X, TrendingUp, Bell,  Briefcase, UserX, Palette
+
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
@@ -77,6 +78,8 @@ const MENU_GROUPS = [
       { path: '/payroll',       label: 'الرواتب',            icon: Banknote,   perm: 'payroll.view' },
       { path: '/salary-config', label: 'إعدادات الرواتب',    icon: SettingsIcon, perm: 'payroll.calculate' },
       { path: '/rewards',       label: 'المكافآت',           icon: Gift,       perm: 'rewards.view' },
+      { path: '/partners',      label: 'الشركاء',            icon: Briefcase,  perm: 'partners.view' },
+      { path: '/partner-profits', label: 'الأرباح والتوزيع', icon: TrendingUp, perm: 'partners.view' },
       { path: '/advances',      label: 'السلف',              icon: HandCoins,  perm: 'advances.view' },
     ],
   },
@@ -88,6 +91,9 @@ const MENU_GROUPS = [
     collapsible: true,
     items: [
       { path: '/whatsapp',        label: 'واتساب',       icon: MessageCircle, perm: 'whatsapp.fees' },
+      { path: '/fee-reminders',   label: 'تذكيرات الأقساط', icon: Wallet, perm: 'whatsapp.fees' },
+      { path: '/absence-reminders', label: 'تذكيرات الغياب', icon: UserX, perm: 'whatsapp.fees' },
+      { path: '/grade-notices',   label: 'إشعارات الدرجات', icon: GraduationCap, perm: 'whatsapp.grades' },
       { path: '/communications',  label: 'سجل التواصل',  icon: Phone,         perm: 'communications.view' },
       { path: '/notes',           label: 'الملاحظات',    icon: MessageSquare, perm: 'notes.view' },
     ],
@@ -113,6 +119,7 @@ const MENU_GROUPS = [
       { path: '/permissions', label: 'الصلاحيات',   icon: Shield,       perm: 'users.permissions' },
       { path: '/qr-codes',    label: 'رموز QR',     icon: QrCode,       perm: 'settings.view' },
       { path: '/settings',    label: 'الإعدادات',   icon: SettingsIcon, perm: 'settings.view' },
+      { path: '/branding',    label: 'الهوية البصرية', icon: Palette,  perm: 'settings.view' },
     ],
   },
 ]
@@ -205,20 +212,19 @@ const fetchStats = async () => {
       {/* ============================================
           رأس القائمة
       ============================================ */}
-      <div className="p-4 flex items-center gap-3 border-b flex-shrink-0"
+           <div className="py-5 px-3 flex flex-col items-center gap-2 border-b flex-shrink-0"
            style={{ borderColor: 'var(--border-color)' }}>
-        <div
-          className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-xl flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
-        >
-          🖋️
-        </div>
+        <img
+          src="/logo.png"
+          alt="مداد"
+          className="w-25 h-25 rounded-xl object-contain flex-shrink-0"
+        />
         {open && (
-          <div className="animate-fade-in overflow-hidden">
+          <div className="animate-fade-in text-center w-full">
             <h1 className="font-bold text-base leading-tight">
               {lang === 'ar' ? 'مداد المحاسبي' : 'Midad'}
             </h1>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
               {user?.role === 'admin' ? (lang === 'ar' ? 'مدير' : 'Admin') :
                user?.role === 'accountant' ? (lang === 'ar' ? 'محاسب' : 'Accountant') :
                user?.role === 'teacher' ? (lang === 'ar' ? 'معلم' : 'Teacher') :
@@ -227,7 +233,6 @@ const fetchStats = async () => {
           </div>
         )}
       </div>
-
       {/* ============================================
           حقل البحث
       ============================================ */}

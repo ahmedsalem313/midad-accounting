@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import {
   MessageCircle, Send, Users, FileText, AlertCircle,
   CheckCircle, XCircle, Loader, Smartphone, DollarSign,
-  GraduationCap, Megaphone, RefreshCw, Wifi, WifiOff, Trash2
+  GraduationCap, Megaphone, RefreshCw, Wifi, WifiOff, Trash2,
+  Eye, X
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../services/api'
@@ -29,7 +30,7 @@ export default function WhatsApp() {
   const [stats, setStats] = useState({ pending: 0, sent: 0, failed: 0 })
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
-
+  const [selectedMessage, setSelectedMessage] = useState(null)
   // نموذج الأقساط
   const [feesForm, setFeesForm] = useState({
     grade: '',
@@ -167,7 +168,292 @@ const handleSendGrades = async () => {
       toast.error('فشل')
     }
   }
+  // ============================================
+  // طباعة الرسالة
+  // ============================================
+  const handlePrintMessage = (msg) => {
+    const schoolName = localStorage.getItem('midad_school_name') || 'مداد المحاسبي'
 
+    const printHTML = `
+      <!DOCTYPE html>
+      <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>طباعة الرسالة</title>
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Cairo', sans-serif;
+            padding: 30px;
+            background: white;
+            color: #1e293b;
+          }
+          .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 15px;
+            border-bottom: 3px double #6366F1;
+            margin-bottom: 20px;
+          }
+          .header img { height: 60px; }
+          .header h1 {
+            font-size: 20px;
+            color: #6366F1;
+          }
+          .title {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1));
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+          }
+          .title h2 { font-size: 16px; color: #4338CA; }
+          .info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+          }
+          .info-item {
+            font-size: 12px;
+            display: flex;
+            gap: 6px;
+          }
+          .info-item strong { color: #6366F1; }
+          .message-box {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: white;
+            white-space: pre-wrap;
+            line-height: 1.8;
+            font-size: 13px;
+          }
+          .message-label {
+            background: #6366F1;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px 8px 0 0;
+            margin: -20px -20px 15px -20px;
+            font-weight: 700;
+            font-size: 12px;
+          }
+          .footer {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 10px;
+            padding-top: 15px;
+            border-top: 1px dashed #cbd5e1;
+          }
+          @media print {
+            body { padding: 15px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="${window.location.origin}/logo.png" alt="Logo" onerror="this.style.display='none'">
+            <h1>${schoolName}</h1>
+          </div>
+          <div style="font-size: 11px; color: #64748b;">
+            تاريخ الطباعة: <strong>${new Date().toLocaleString('en-GB')}</strong>
+          </div>
+        </div>
+
+        <div class="title">
+          <h2>📄 نسخة من رسالة واتساب</h2>
+        </div>
+
+        <div class="info">
+          <div class="info-item">
+            <strong>📱 رقم المستلم:</strong>
+            <span dir="ltr">${msg.phone}</span>
+          </div>
+          <div class="info-item">
+            <strong>📅 تاريخ الإرسال:</strong>
+            <span dir="ltr">${msg.sent_at ? new Date(msg.sent_at).toLocaleString('en-GB') : '—'}</span>
+          </div>
+          <div class="info-item">
+            <strong>📌 الحالة:</strong>
+            <span>${msg.status === 'sent' ? '✅ مرسلة' : msg.status === 'failed' ? '❌ فشلت' : '⏳ ينتظر'}</span>
+          </div>
+          <div class="info-item">
+            <strong>🏷️ النوع:</strong>
+            <span>${msg.template || '—'}</span>
+          </div>
+        </div>
+
+        <div class="message-box">
+          <div class="message-label">📄 نص الرسالة:</div>
+          ${msg.message || '—'}
+        </div>
+
+        <div class="footer">
+          هذا المستند صادر إلكترونيًا من ${schoolName} — نظام مداد المحاسبي
+        </div>
+      </body>
+      </html>
+    `
+
+    const printWindow = window.open('', '_blank', 'width=800,height=900')
+    printWindow.document.write(printHTML)
+    printWindow.document.close()
+
+    setTimeout(() => {
+      printWindow.focus()
+      printWindow.print()
+    }, 500)
+  }
+
+  // ============================================
+  // تصدير الرسالة PDF
+  // ============================================
+  const handleExportPDF = async (msg) => {
+    try {
+      const schoolName = localStorage.getItem('midad_school_name') || 'مداد المحاسبي'
+
+      // استخدم نفس HTML الطباعة
+      const printHTML = `
+        <!DOCTYPE html>
+        <html lang="ar" dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>رسالة واتساب</title>
+          <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+              font-family: 'Cairo', sans-serif;
+              padding: 30px;
+              background: white;
+              color: #1e293b;
+            }
+            .header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding-bottom: 15px;
+              border-bottom: 3px double #6366F1;
+              margin-bottom: 20px;
+            }
+            .header img { height: 60px; }
+            .header h1 { font-size: 20px; color: #6366F1; }
+            .title {
+              text-align: center;
+              background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1));
+              padding: 12px;
+              border-radius: 10px;
+              margin-bottom: 20px;
+            }
+            .title h2 { font-size: 16px; color: #4338CA; }
+            .info {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              margin-bottom: 20px;
+              padding: 15px;
+              background: #f8fafc;
+              border-radius: 10px;
+            }
+            .info-item { font-size: 12px; display: flex; gap: 6px; }
+            .info-item strong { color: #6366F1; }
+            .message-box {
+              border: 2px solid #e2e8f0;
+              border-radius: 10px;
+              padding: 20px;
+              margin-bottom: 20px;
+              background: white;
+              white-space: pre-wrap;
+              line-height: 1.8;
+              font-size: 13px;
+            }
+            .message-label {
+              background: #6366F1;
+              color: white;
+              padding: 8px 12px;
+              border-radius: 8px 8px 0 0;
+              margin: -20px -20px 15px -20px;
+              font-weight: 700;
+              font-size: 12px;
+            }
+            .footer {
+              text-align: center;
+              color: #94a3b8;
+              font-size: 10px;
+              padding-top: 15px;
+              border-top: 1px dashed #cbd5e1;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img src="${window.location.origin}/logo.png" alt="Logo" onerror="this.style.display='none'">
+              <h1>${schoolName}</h1>
+            </div>
+            <div style="font-size: 11px; color: #64748b;">
+              تاريخ التصدير: <strong>${new Date().toLocaleString('en-GB')}</strong>
+            </div>
+          </div>
+
+          <div class="title">
+            <h2>📄 نسخة من رسالة واتساب</h2>
+          </div>
+
+          <div class="info">
+            <div class="info-item">
+              <strong>📱 رقم المستلم:</strong>
+              <span dir="ltr">${msg.phone}</span>
+            </div>
+            <div class="info-item">
+              <strong>📅 تاريخ الإرسال:</strong>
+              <span dir="ltr">${msg.sent_at ? new Date(msg.sent_at).toLocaleString('en-GB') : '—'}</span>
+            </div>
+            <div class="info-item">
+              <strong>📌 الحالة:</strong>
+              <span>${msg.status === 'sent' ? '✅ مرسلة' : msg.status === 'failed' ? '❌ فشلت' : '⏳ ينتظر'}</span>
+            </div>
+            <div class="info-item">
+              <strong>🏷️ النوع:</strong>
+              <span>${msg.template || '—'}</span>
+            </div>
+          </div>
+
+          <div class="message-box">
+            <div class="message-label">📄 نص الرسالة:</div>
+            ${msg.message || '—'}
+          </div>
+
+          <div class="footer">
+            هذا المستند صادر إلكترونيًا من ${schoolName} — نظام مداد المحاسبي
+          </div>
+        </body>
+        </html>
+      `
+
+      // افتح نافذة جديدة واطبع كـ PDF
+      const printWindow = window.open('', '_blank', 'width=800,height=900')
+      printWindow.document.write(printHTML)
+      printWindow.document.close()
+
+      setTimeout(() => {
+        printWindow.focus()
+        // يُنبه المستخدم: اختر "Save as PDF"
+        toast('اختر "Save as PDF" من نافذة الطباعة', { icon: '💡', duration: 4000 })
+        printWindow.print()
+      }, 500)
+    } catch (e) {
+      console.error(e)
+      toast.error('فشل التصدير')
+    }
+  }
   const fmt = (n) => (n || 0).toLocaleString('ar-IQ')
 
   const isReady = status.status === 'ready'
@@ -572,12 +858,17 @@ const handleSendGrades = async () => {
                     <th className="p-3 text-start">الرسالة</th>
                     <th className="p-3 text-start">الحالة</th>
                     <th className="p-3 text-start">التاريخ</th>
+                    <th className="p-3 text-center">إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {messages.map((m, i) => (
-                    <tr key={m.id} className="border-b hover:bg-primary-50/40 dark:hover:bg-primary-900/10"
-                        style={{ borderColor: 'var(--border-color)' }}>
+                    <tr
+                      key={m.id}
+                      className="border-b hover:bg-primary-50/40 dark:hover:bg-primary-900/10 cursor-pointer transition-colors"
+                      style={{ borderColor: 'var(--border-color)' }}
+                      onClick={() => setSelectedMessage(m)}
+                    >
                       <td className="p-3" style={{ color: 'var(--text-secondary)' }}>{i + 1}</td>
                       <td className="p-3" dir="ltr">{m.phone}</td>
                       <td className="p-3 max-w-[300px] text-xs">
@@ -592,12 +883,149 @@ const handleSendGrades = async () => {
                       <td className="p-3 text-xs" dir="ltr">
                         {new Date(m.created_at).toLocaleString('en-GB')}
                       </td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedMessage(m)
+                          }}
+                          className="btn-ghost !p-2 text-primary-500 hover:text-primary-700"
+                          title="عرض الرسالة"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal: عرض الرسالة */}
+      {selectedMessage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in"
+          onClick={() => setSelectedMessage(null)}
+        >
+          <div
+            className="glass-card w-full max-w-lg p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <FileText className="text-primary-500" size={22} />
+                تفاصيل الرسالة
+              </h3>
+              <button
+                onClick={() => setSelectedMessage(null)}
+                className="btn-ghost !p-2 text-red-500"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* البيانات */}
+            <div className="space-y-3 mb-5">
+              <div className="flex items-center justify-between p-3 rounded-xl"
+                   style={{ background: 'rgba(99,102,241,0.08)' }}>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>رقم المستلم:</span>
+                <strong dir="ltr">{selectedMessage.phone}</strong>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl"
+                   style={{ background: 'rgba(99,102,241,0.08)' }}>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>التاريخ:</span>
+                <strong dir="ltr">
+                  {new Date(selectedMessage.created_at).toLocaleString('en-GB')}
+                </strong>
+              </div>
+
+              {selectedMessage.sent_at && (
+                <div className="flex items-center justify-between p-3 rounded-xl"
+                     style={{ background: 'rgba(16,185,129,0.08)' }}>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>وقت الإرسال:</span>
+                  <strong className="text-emerald-600" dir="ltr">
+                    {new Date(selectedMessage.sent_at).toLocaleString('en-GB')}
+                  </strong>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between p-3 rounded-xl"
+                   style={{ background: 'rgba(99,102,241,0.08)' }}>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>الحالة:</span>
+                {selectedMessage.status === 'sent' && <span className="badge-success">✅ مرسلة</span>}
+                {selectedMessage.status === 'pending' && <span className="badge-warning">⏳ ينتظر</span>}
+                {selectedMessage.status === 'failed' && <span className="badge-danger">❌ فشلت</span>}
+              </div>
+
+              {selectedMessage.error && (
+                <div className="p-3 rounded-xl"
+                     style={{ background: 'rgba(239,68,68,0.1)', color: '#991B1B' }}>
+                  <p className="text-xs font-bold mb-1">⚠️ سبب الفشل:</p>
+                  <p className="text-xs">{selectedMessage.error}</p>
+                </div>
+              )}
+            </div>
+
+            {/* نص الرسالة */}
+            <div className="mb-5">
+              <label className="text-sm font-bold mb-2 block flex items-center gap-2">
+                📄 نص الرسالة:
+              </label>
+              <div
+                className="p-4 rounded-xl max-h-72 overflow-y-auto whitespace-pre-wrap text-sm leading-relaxed"
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  color: '#1e293b',
+                  fontFamily: 'Cairo, sans-serif',
+                  direction: 'rtl',
+                }}
+              >
+                {selectedMessage.message || '—'}
+              </div>
+            </div>
+
+            {/* أزرار */}
+            <div className="flex gap-2 pt-2 flex-wrap">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(selectedMessage.message || '')
+                  toast.success('تم نسخ الرسالة')
+                }}
+                className="btn-ghost flex-1 flex items-center justify-center gap-2 border-2"
+                style={{ borderColor: 'var(--border-color)' }}
+              >
+                📋 نسخ
+              </button>
+
+              <button
+                onClick={() => handlePrintMessage(selectedMessage)}
+                className="btn-ghost flex-1 flex items-center justify-center gap-2 border-2"
+                style={{ borderColor: 'var(--border-color)' }}
+              >
+                🖨️ طباعة
+              </button>
+
+              <button
+                onClick={() => handleExportPDF(selectedMessage)}
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
+              >
+                📄 PDF
+              </button>
+
+              <button
+                onClick={() => setSelectedMessage(null)}
+                className="btn-ghost"
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

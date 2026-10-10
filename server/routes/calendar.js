@@ -4,11 +4,34 @@ import { authMiddleware } from '../middleware/auth.js'
 import { checkPermission } from '../middleware/permissions.js'
 
 const router = express.Router()
-router.use(authMiddleware)
 
 // ============================================
-// GET - كل الأحداث
+// GET - أحداث عامة لولي الأمر (بدون مصادقة)
 // ============================================
+router.get('/public', (req, res) => {
+  try {
+    const db = getDB()
+    const today = new Date().toISOString().split('T')[0]
+
+    const events = db.prepare(`
+      SELECT id, title, description, type, start_date, end_date, is_holiday, color
+      FROM academic_events
+      WHERE start_date >= ?
+        AND visible_to_parents = 1
+      ORDER BY start_date ASC
+      LIMIT 20
+    `).all(today)
+
+    res.json({ success: true, data: events })
+  } catch (error) {
+    console.error('GET /calendar/public error:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+// باقي المسارات تحتاج مصادقة
+router.use(authMiddleware)
+
 // ============================================
 // GET - كل الأحداث
 // ============================================
@@ -47,6 +70,10 @@ router.get('/', checkPermission('calendar.view'), (req, res) => {
     res.status(500).json({ success: false, error: error.message })
   }
 })
+
+// ============================================
+// GET - الأحداث القادمة
+// ============================================
 router.get('/upcoming', checkPermission('calendar.view'), (req, res) => {
   try {
     const db = getDB()

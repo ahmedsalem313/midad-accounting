@@ -43,7 +43,12 @@ import studentHistoryRoutes from './routes/studentHistory.js'
 const __filename = fileURLToPath(import.meta.url)
 import promotionsRoutes from './routes/promotions.js'
 const __dirname = path.dirname(__filename)
-
+import seedRoutes from './routes/seed.js'
+import brandingRoutes from './routes/branding.js'
+import partnersRoutes from './routes/partners.js'
+import feeRemindersRoutes from './routes/feeReminders.js'
+import absenceRemindersRoutes from './routes/absenceReminders.js'
+import gradeNoticesRoutes from './routes/gradeNotices.js'
 // ============ الإعداد الأساسي ============
 const app = express()
 const httpServer = createServer(app)
@@ -58,6 +63,12 @@ app.use(morgan('dev'))
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 app.use('/api/promotions', promotionsRoutes)
+app.use('/api/seed', seedRoutes)
+app.use('/api/branding', brandingRoutes)
+app.use('/api/partners', partnersRoutes)
+app.use('/api/fee-reminders', feeRemindersRoutes)
+app.use('/api/absence-reminders', absenceRemindersRoutes)
+app.use('/api/grade-notices', gradeNoticesRoutes)
 // الملفات المرفوعة
 app.use('/uploads', express.static(config.uploads.path))
 
@@ -154,7 +165,24 @@ setIo(io);
 
 // ============ WhatsApp ============
 initWhatsApp(io)
+// ============ خدمة ملفات React المبنية ============
+const clientDist = path.join(__dirname, '../client/dist')
 
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist))
+
+  // SPA fallback — أي مسار غير API يُعيد index.html
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/socket.io')) {
+      return next()
+    }
+    res.sendFile(path.join(clientDist, 'index.html'))
+  })
+
+  console.log('✅ Serving client from:', clientDist)
+} else {
+  console.warn('⚠️  client/dist not found — run: cd client && npm run build')
+}
 app.set('io', io)
 
 // ============ معالجة الأخطاء ============

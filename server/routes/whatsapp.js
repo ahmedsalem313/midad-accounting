@@ -10,6 +10,7 @@ import {
   isReady,
   reconnect,
 } from '../services/whatsapp.js'
+import { generateGradeReport } from '../services/pdfGenerator.js'
 const router = express.Router()
 
 // ============================================

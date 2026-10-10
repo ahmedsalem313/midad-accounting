@@ -40,12 +40,11 @@ export default function Login() {
       <div className="glass-card w-full max-w-md p-8 animate-slide-up">
         {/* الشعار */}
         <div className="text-center mb-8">
-          <div
-            className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-white text-4xl mb-4"
-            style={{ background: 'linear-gradient(135deg, #6366F1, #8B5CF6)' }}
-          >
-            🖋️
-          </div>
+          <img
+  src="/logo.png"
+  alt="مداد المحاسبي"
+  className="w-50 h-50 object-contain mx-auto mb-4"
+/>
           <h1 className="text-3xl font-bold mb-1">مداد المحاسبي</h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             نظام إدارة مدرسية متكامل

@@ -10,22 +10,37 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,
+    host: '0.0.0.0',
     port: 5173,
     strictPort: true,
     allowedHosts: [
       'localhost',
       '.trycloudflare.com',
-      'coalition-way-baths-items.trycloudflare.com',
+      'midad.midadapp.com.co',
+      '.midadapp.com.co',
     ],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+        secure: false,
+        ws: true,
+        configure: (proxy) => {
+          proxy.on('error', (err) => {
+            console.error('proxy error:', err.message)
+          })
+        },
       },
       '/uploads': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+        secure: false,
+      },
+      '/socket.io': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
       },
     },
   },

@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Bell, Check, Trash2 } from 'lucide-react';
 import api from '../services/api';
-import { getSocket } from '../lib/socket';
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -10,24 +9,22 @@ export default function NotificationBell() {
   const boxRef = useRef(null);
 
   const load = async () => {
-    const [list, count] = await Promise.all([
-      api.get('/notifications'),
-      api.get('/notifications/unread-count'),
-    ]);
-    setItems(list.data);
-    setUnread(count.data.count);
+    try {
+      const [list, count] = await Promise.all([
+        api.get('/notifications'),
+        api.get('/notifications/unread-count'),
+      ]);
+      setItems(list.data);
+      setUnread(count.data.count);
+    } catch (e) {
+      // صامت
+    }
   };
 
   useEffect(() => {
     load();
-    const s = getSocket();
-    if (!s) return;
-    const onNew = (n) => {
-      setItems((prev) => [n, ...prev]);
-      setUnread((u) => u + 1);
-    };
-    s.on('notification', onNew);
-    return () => s.off('notification', onNew);
+    const interval = setInterval(load, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
